@@ -98,39 +98,6 @@ For production deployment:
 2. Set `OAUTH_BASE_URL` to your production domain
 3. Use HTTPS
 
-## GitHub Setup
-
-To make this repository public and allow others to use it:
-
-### Option 1: Using Your Own GitHub Account
-
-1. Initialize git (if not already):
-```bash
-cd vinyl-pick
-git init
-git add .
-git commit -m "Initial commit: Vinyl Pick - Random vinyl picker for Discogs"
-```
-
-2. Create a GitHub repository at https://github.com/new
-
-3. Push to GitHub:
-```bash
-git remote add origin https://github.com/YOUR_USERNAME/vinyl-pick.git
-git branch -M main
-git push -u origin main
-```
-
-### Option 2: Allow Others to Fork and Deploy
-
-Others can fork your repository and:
-
-1. Create their own Discogs application
-2. Update the Consumer Key/Secret in their deployment
-3. Deploy to their own hosting
-
-The app is designed so each user can configure their own Discogs credentials.
-
 ## How It Works
 
 1. User clicks "Connect with Discogs"
