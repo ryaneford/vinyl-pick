@@ -2,8 +2,6 @@
 
 A simple web app that picks a random vinyl record from your Discogs collection.
 
-![Vinyl Pick](https://yourdomain.com)
-
 ## Features
 
 - Connect with your Discogs account via OAuth
