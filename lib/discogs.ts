@@ -15,6 +15,11 @@ export interface DiscogsRelease {
   resource_url: string;
   formats: { name: string; descriptions: string[] }[];
   artists: { name: string }[];
+  genres?: string[];
+  styles?: string[];
+  labels?: { name: string; catno: string }[];
+  country?: string;
+  format?: string;
 }
 
 export interface CollectionResponse {
@@ -30,6 +35,10 @@ export interface CollectionResponse {
       resource_url: string;
       formats: { name: string; descriptions: string[] }[];
       artists: { name: string }[];
+      genres?: string[];
+      styles?: string[];
+      labels?: { name: string; catno: string }[];
+      country?: string;
     };
   }[];
   pagination: {
@@ -234,6 +243,10 @@ export async function fetchEntireCollection(
         resource_url: r.basic_information.resource_url,
         formats: r.basic_information.formats,
         artists: r.basic_information.artists,
+        genres: r.basic_information.genres,
+        styles: r.basic_information.styles,
+        labels: r.basic_information.labels,
+        country: r.basic_information.country,
       });
     });
 

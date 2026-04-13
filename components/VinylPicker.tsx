@@ -12,6 +12,10 @@ interface DiscogsRelease {
   thumb: string;
   cover_image: string;
   artists: { name: string }[];
+  genres?: string[];
+  styles?: string[];
+  labels?: { name: string; catno: string }[];
+  country?: string;
 }
 
 interface VinylPickerProps {
@@ -415,6 +419,63 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       <p className="text-center text-gray-400 dark:text-gray-500 text-sm mt-4">
         {collection.length - playedIds.length} / {collection.length} records remaining
       </p>
+
+      {collection.length > 0 && <StatsPanel collection={collection} playedIds={playedIds} />}
+    </div>
+  );
+}
+
+function StatsPanel({ collection, playedIds }: { collection: DiscogsRelease[]; playedIds: number[] }) {
+  const uniqueArtists = new Set(
+    collection.filter((r) => playedIds.includes(r.instance_id)).flatMap((r) => r.artists?.map((a) => a.name) || [])
+  ).size;
+
+  const genreCounts: Record<string, number> = {};
+  collection.forEach((r) => {
+    (r.genres || []).forEach((g) => {
+      genreCounts[g] = (genreCounts[g] || 0) + 1;
+    });
+  });
+  const topGenres = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+  const decadeCounts: Record<string, number> = {};
+  collection.forEach((r) => {
+    if (r.year) {
+      const decade = Math.floor(r.year / 10) * 10 + 's';
+      decadeCounts[decade] = (decadeCounts[decade] || 0) + 1;
+    }
+  });
+  const decades = Object.entries(decadeCounts).sort((a, b) => b[0].localeCompare(a[0]));
+
+  return (
+    <div className="mt-6 bg-gray-50 dark:bg-zinc-700 rounded-lg p-4">
+      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Collection Stats</h3>
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <span className="text-gray-400 dark:text-gray-500">Total plays:</span>{' '}
+          <span className="font-medium dark:text-white">{playedIds.length}</span>
+        </div>
+        <div>
+          <span className="text-gray-400 dark:text-gray-500">Unique artists:</span>{' '}
+          <span className="font-medium dark:text-white">{uniqueArtists}</span>
+        </div>
+        {topGenres.length > 0 && (
+          <div className="col-span-2">
+            <span className="text-gray-400 dark:text-gray-500">Top genres: </span>
+            <span className="font-medium dark:text-white">
+              {topGenres.map((g) => `${g[0]} (${g[1]})`).join(', ')}
+            </span>
+          </div>
+        )}
+        {decades.length > 0 && (
+          <div className="col-span-2">
+            <span className="text-gray-400 dark:text-gray-500">Decades: </span>
+            <span className="font-medium dark:text-white">
+              {decades.map((d) => d[0]).join(', ')}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
