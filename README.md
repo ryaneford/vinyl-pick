@@ -57,19 +57,16 @@ NEXT_PUBLIC_OAUTH_CALLBACK=http://localhost:3000/api/oauth/callback
 
 ## Deployment
 
-### Docker
+### Docker (Recommended)
 
 ```bash
-# Build
-docker build -t vinyl-pick .
-
-# Run
 docker run -d -p 3000:3000 \
-  -e DISCOGS_CONSUMER_KEY=your_key \
-  -e DISCOGS_CONSUMER_SECRET=your_secret \
+  -e DISCOGS_CONSUMER_KEY=your_consumer_key \
+  -e DISCOGS_CONSUMER_SECRET=your_consumer_secret \
   -e NEXT_PUBLIC_OAUTH_CALLBACK=https://yourdomain.com/api/oauth/callback \
   -e OAUTH_BASE_URL=https://yourdomain.com \
-  vinyl-pick
+  --restart unless-stopped \
+  ryaneford/vinyl-pick
 ```
 
 ### Docker Compose
@@ -77,7 +74,7 @@ docker run -d -p 3000:3000 \
 ```yaml
 services:
   vinyl-pick:
-    build: .
+    image: ryaneford/vinyl-pick
     ports:
       - "3000:3000"
     environment:
@@ -86,6 +83,18 @@ services:
       - NEXT_PUBLIC_OAUTH_CALLBACK=https://yourdomain.com/api/oauth/callback
       - OAUTH_BASE_URL=https://yourdomain.com
     restart: unless-stopped
+```
+
+### Build Locally (Alternative)
+
+```bash
+docker build -t vinyl-pick .
+docker run -d -p 3000:3000 \
+  -e DISCOGS_CONSUMER_KEY=your_key \
+  -e DISCOGS_CONSUMER_SECRET=your_secret \
+  -e NEXT_PUBLIC_OAUTH_CALLBACK=https://yourdomain.com/api/oauth/callback \
+  -e OAUTH_BASE_URL=https://yourdomain.com \
+  vinyl-pick
 ```
 
 ### Production Notes
