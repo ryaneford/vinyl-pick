@@ -209,21 +209,10 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
   }, [auth, collection.length, isFetchingCollection, fetchCollection]);
 
   useEffect(() => {
-    if (collection.length > 0 && !currentRelease && playedIds.length === 0) {
+    if (collection.length > 0 && !currentRelease) {
       pickRandomRelease();
     }
-  }, [collection.length, currentRelease, playedIds.length, pickRandomRelease]);
-
-  useEffect(() => {
-    if (collection.length > 0 && currentRelease === null) {
-      const timer = setTimeout(() => {
-        if (playedIds.length === 0) {
-          pickRandomRelease();
-        }
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [currentRelease, collection.length, playedIds.length, pickRandomRelease]);
+  }, [collection.length, currentRelease, pickRandomRelease]);
 
   const resetHistory = () => {
     setPlayedIds([]);
@@ -389,7 +378,11 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         </button>
       ) : (
         <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-8 text-center">
-          <p className="text-gray-500 dark:text-gray-400">No vinyl found in collection</p>
+          {collection.length > 0 ? (
+            <p className="text-gray-500 dark:text-gray-400">No vinyl selected</p>
+          ) : (
+            <p className="text-gray-500 dark:text-gray-400">No vinyl found in collection</p>
+          )}
         </div>
       )}
 
