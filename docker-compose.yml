@@ -11,8 +11,8 @@ services:
     environment:
       - NEXT_PUBLIC_OAUTH_CALLBACK=https://random.minitrash.com/api/oauth/callback
       - OAUTH_BASE_URL=https://random.minitrash.com
-      - DISCOGS_CONSUMER_KEY=ntFVcHyPjCrFsojUlRRH
-      - DISCOGS_CONSUMER_SECRET=BxujyfkEInijxjBTYfjeemggxjQBAsfn
+      - DISCOGS_CONSUMER_KEY=your_consumer_key
+      - DISCOGS_CONSUMER_SECRET=your_consumer_secret
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
