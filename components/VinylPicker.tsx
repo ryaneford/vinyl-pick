@@ -185,11 +185,10 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
     setIsFetchingCollection(false);
   }, [auth]);
 
-  const pickRandomRelease = useCallback(() => {
+  const pickRandomRelease = useCallback((skip = false) => {
     if (collection.length === 0) return;
 
     const unplayed = collection.filter((r) => !playedIds.includes(r.instance_id));
-
     if (unplayed.length === 0) {
       setError('All records have been played! Reset history to start over.');
       return;
@@ -198,7 +197,9 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
     const randomIndex = Math.floor(Math.random() * unplayed.length);
     const selected = unplayed[randomIndex];
     setCurrentRelease(selected);
-    savePlayed([...playedIds, selected.instance_id]);
+    if (!skip) {
+      savePlayed([...playedIds, selected.instance_id]);
+    }
   }, [collection, playedIds]);
 
   useEffect(() => {
@@ -208,16 +209,27 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
   }, [auth, collection.length, isFetchingCollection, fetchCollection]);
 
   useEffect(() => {
-    if (collection.length > 0 && !currentRelease) {
+    if (collection.length > 0 && !currentRelease && playedIds.length === 0) {
       pickRandomRelease();
     }
-  }, [collection.length, currentRelease, pickRandomRelease]);
+  }, [collection.length, currentRelease, playedIds.length, pickRandomRelease]);
+
+  useEffect(() => {
+    if (collection.length > 0 && currentRelease === null) {
+      const timer = setTimeout(() => {
+        if (playedIds.length === 0) {
+          pickRandomRelease();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [currentRelease, collection.length, playedIds.length, pickRandomRelease]);
 
   const resetHistory = () => {
-    savePlayed([]);
+    setPlayedIds([]);
+    localStorage.setItem('vinyl_played', '[]');
     setCurrentRelease(null);
     setError(null);
-    pickRandomRelease();
   };
 
   const logout = () => {
@@ -383,7 +395,15 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 
       <div className="flex gap-4 mt-4">
         <button
-          onClick={pickRandomRelease}
+          onClick={() => pickRandomRelease(true)}
+          disabled={isLoading || collection.length === 0}
+          className="px-4 py-3 border border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg"
+          title="Skip this record without counting it as played"
+        >
+          Skip
+        </button>
+        <button
+          onClick={() => pickRandomRelease()}
           disabled={isLoading || collection.length === 0}
           className="flex-1 bg-black dark:bg-zinc-700 text-white dark:text-white py-3 rounded-lg font-medium disabled:opacity-50"
         >
