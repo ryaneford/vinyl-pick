@@ -68,7 +68,7 @@ export async function requestToken(): Promise<{
 }> {
   const oauth = createOAuthClient();
   const url = `${API_BASE}/oauth/request_token`;
-  const callbackUrl = process.env.NEXT_PUBLIC_OAUTH_CALLBACK || 'https://random.minitrash.com/api/oauth/callback';
+  const callbackUrl = process.env.NEXT_PUBLIC_OAUTH_CALLBACK || 'https://yourdomain.com/api/oauth/callback';
 
   const requestData = {
     url,
@@ -81,7 +81,7 @@ export async function requestToken(): Promise<{
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'User-Agent': 'VinylPick/1.0 +https://random.minitrash.com',
+      'User-Agent': 'VinylPick/1.0 +https://yourdomain.com',
       'Authorization': authHeader.Authorization,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
@@ -121,7 +121,7 @@ export async function accessToken(
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'User-Agent': 'VinylPick/1.0 +https://random.minitrash.com',
+      'User-Agent': 'VinylPick/1.0 +https://yourdomain.com',
       'Authorization': authHeader.Authorization,
       'Content-Type': 'application/x-www-form-urlencoded',
     },

@@ -2,7 +2,7 @@
 
 A simple web app that picks a random vinyl record from your Discogs collection.
 
-![Vinyl Pick](https://random.minitrash.com)
+![Vinyl Pick](https://yourdomain.com)
 
 ## Features
 

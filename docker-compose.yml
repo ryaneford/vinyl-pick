@@ -9,8 +9,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_OAUTH_CALLBACK=https://random.minitrash.com/api/oauth/callback
-      - OAUTH_BASE_URL=https://random.minitrash.com
+      - NEXT_PUBLIC_OAUTH_CALLBACK=https://yourdomain.com/api/oauth/callback
+      - OAUTH_BASE_URL=https://yourdomain.com
       - DISCOGS_CONSUMER_KEY=your_consumer_key
       - DISCOGS_CONSUMER_SECRET=your_consumer_secret
     restart: unless-stopped

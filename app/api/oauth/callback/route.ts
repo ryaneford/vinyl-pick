@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { accessToken, getUserIdentity } from '@/lib/discogs';
 
-const OAUTH_BASE_URL = process.env.OAUTH_BASE_URL || 'https://random.minitrash.com';
+const OAUTH_BASE_URL = process.env.OAUTH_BASE_URL || 'https://yourdomain.com';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
