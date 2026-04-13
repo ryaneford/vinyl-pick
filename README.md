@@ -47,12 +47,20 @@ To use the app, you need to create a Discogs application:
 
 ### Environment Variables
 
-Create a `.env.local` file:
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DISCOGS_CONSUMER_KEY` | Yes | Your Discogs application consumer key |
+| `DISCOGS_CONSUMER_SECRET` | Yes | Your Discogs application consumer secret |
+| `NEXT_PUBLIC_OAUTH_CALLBACK` | Yes | OAuth callback URL (e.g., `https://yourdomain.com/api/oauth/callback`) |
+| `OAUTH_BASE_URL` | Yes | Your app's base URL for OAuth redirect (e.g., `https://yourdomain.com`) |
+
+For local development, create a `.env.local` file:
 
 ```env
 DISCOGS_CONSUMER_KEY=your_consumer_key
 DISCOGS_CONSUMER_SECRET=your_consumer_secret
 NEXT_PUBLIC_OAUTH_CALLBACK=http://localhost:3000/api/oauth/callback
+OAUTH_BASE_URL=http://localhost:3000
 ```
 
 ## Deployment

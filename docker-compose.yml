@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   vinyl-pick:
-    build:
-      context: /home/ryan/vinyl-pick
-      dockerfile: Dockerfile
+    image: ryaneford/vinyl-pick
     container_name: vinyl-pick
     ports:
       - "3000:3000"
