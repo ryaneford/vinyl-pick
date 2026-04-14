@@ -39,7 +39,6 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
   const [error, setError] = useState<string | null>(null);
   const [showVerifierInput, setShowVerifierInput] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [showDetails, setShowDetails] = useState(false);
   const [history, setHistory] = useState<DiscogsRelease[]>([]);
   const [filterGenre, setFilterGenre] = useState<string>('');
   const [filterDecade, setFilterDecade] = useState<string>('');
@@ -309,14 +308,11 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       } else if (e.code === 'KeyR') {
         e.preventDefault();
         resetHistory();
-      } else if (e.code === 'KeyD') {
-        e.preventDefault();
-        setShowDetails(!showDetails);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [pickRandomRelease, showDetails]);
+  }, [pickRandomRelease]);
 
   const logout = () => {
     localStorage.removeItem('discogs_auth');
@@ -459,21 +455,6 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           </button>
           */}
           <button
-            onClick={toggleTheme}
-            className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {theme === 'dark' ? (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
-            )}
-          </button>
-          <button
             onClick={logout}
             className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           >
@@ -536,31 +517,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
               <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">{currentRelease.year}</p>
             )}
           </div>
-          {showDetails && (
-            <div className="mt-4 text-left text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-zinc-700 rounded p-3">
-              {currentRelease.genres && currentRelease.genres.length > 0 && (
-                <p><span className="font-medium">Genre:</span> {currentRelease.genres.join(', ')}</p>
-              )}
-              {currentRelease.styles && currentRelease.styles.length > 0 && (
-                <p><span className="font-medium">Style:</span> {currentRelease.styles.join(', ')}</p>
-              )}
-              {currentRelease.country && (
-                <p><span className="font-medium">Country:</span> {currentRelease.country}</p>
-              )}
-              {currentRelease.labels && currentRelease.labels.length > 0 && (
-                <p><span className="font-medium">Label:</span> {currentRelease.labels[0].name} ({currentRelease.labels[0].catno})</p>
-              )}
-            </div>
-            )}
-            <div className="flex justify-center gap-2 mt-2">
-              <button
-                onClick={() => setShowDetails(!showDetails)}
-                className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-              >
-                {showDetails ? 'Hide Details (D)' : 'Show Details (D)'}
-              </button>
-            </div>
-            <div className="flex justify-center gap-3 mt-2">
+          <div className="flex justify-center gap-3 mt-2">
               <button onClick={openOnDiscogs} className="p-1.5 rounded-full bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600" title="Discogs">
                 <img src="https://cdn.simpleicons.org/discogs" className="w-4 h-4 dark:invert" />
               </button>
@@ -720,7 +677,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       </p>
 
       <p className="text-center text-gray-500 dark:text-gray-600 text-xs mt-2">
-        Keyboard: Space=Pick | S=Skip | R=Reset | D=Details
+        Keyboard: Space=Pick | S=Skip | R=Reset
       </p>
 
       <button
