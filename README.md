@@ -151,7 +151,7 @@ MIT
 
 ## Credits
 
-- Discogs logo from [Simple Icons](https://simpleicons.org)
+- Service icons from [Simple Icons](https://simpleicons.org) — Discogs, Spotify, Apple Music, Tidal, YouTube Music
 
 ---
 
