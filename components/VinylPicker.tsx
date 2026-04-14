@@ -16,6 +16,7 @@ interface DiscogsRelease {
   styles?: string[];
   labels?: { name: string; catno: string }[];
   country?: string;
+  resource_url?: string;
 }
 
 interface VinylPickerProps {
@@ -44,6 +45,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
   const [filterDecade, setFilterDecade] = useState<string>('');
   const [isAnimating, setIsAnimating] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [plexampUrl, setPlexampUrl] = useState<string>('');
 
   const searchParams = useSearchParams();
   const oauthVerifier = searchParams.get('oauth_verifier');
@@ -55,10 +57,15 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
     const storedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
     const storedFavorites = localStorage.getItem('vinyl_favorites');
     const storedHistory = localStorage.getItem('vinyl_history');
+    const storedPlexamp = localStorage.getItem('plexamp_url');
 
     if (storedTheme) {
       setTheme(storedTheme);
       document.documentElement.setAttribute('data-theme', storedTheme);
+    }
+
+    if (storedPlexamp) {
+      setPlexampUrl(storedPlexamp);
     }
 
     if (storedAuth) {
@@ -252,8 +259,8 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         savePlayed([...playedIds, selected.instance_id]);
         saveHistory([selected, ...history]);
       }
-      setTimeout(() => setIsAnimating(false), 300);
-    }, 200);
+      setIsAnimating(false);
+    }, 300);
   }, [collection, playedIds, filterGenre, filterDecade, history]);
 
   useEffect(() => {
@@ -337,6 +344,40 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
     window.open(`https://www.discogs.com/release/${currentRelease.id}`, '_blank');
   };
 
+  /*
+  const openInPlexamp = async (release: DiscogsRelease) => {
+    if (!plexampUrl || !release) return;
+    const artist = release.artists?.[0]?.name || '';
+    const album = release.title;
+    const searchQuery = encodeURIComponent(`${artist} ${album}`);
+    const plexUrl = `${plexampUrl}/search?query=${searchQuery}`;
+    window.open(plexUrl, '_blank');
+  };
+  */
+
+  const openInService = (service: string) => {
+    if (!currentRelease) return;
+    const artist = currentRelease.artists?.[0]?.name || '';
+    const album = currentRelease.title;
+    const searchQuery = encodeURIComponent(`${artist} ${album}`);
+
+    const urls: Record<string, string> = {
+      spotify: `https://open.spotify.com/search/${searchQuery}`,
+      apple: `https://music.apple.com/search?term=${searchQuery}`,
+      tidal: `https://tidal.com/search?q=${searchQuery}`,
+      youtube: `https://music.youtube.com/search?q=${searchQuery}`,
+    };
+
+    window.open(urls[service] || urls.spotify, '_blank');
+  };
+
+  /*
+  const savePlexampUrl = (url: string) => {
+    localStorage.setItem('plexamp_url', url);
+    setPlexampUrl(url);
+  };
+  */
+
   if (showVerifierInput) {
     return (
       <div className="max-w-md w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-8">
@@ -402,6 +443,20 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           Connected as <strong>{auth.username}</strong>
         </span>
         <div className="flex items-center gap-3">
+          {/*
+          <button
+            onClick={() => {
+              const url = prompt('Enter your Plexamp URL (e.g., http://192.168.1.10:32400 or https://plex.tv/...):', plexampUrl || 'http://localhost:32400');
+              if (url) savePlexampUrl(url);
+            }}
+            className={`text-sm ${plexampUrl ? 'text-green-500' : 'text-gray-400'} hover:text-gray-600 dark:hover:text-gray-300`}
+            title="Configure Plexamp URL"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+          </button>
+          */}
           <button
             onClick={toggleTheme}
             className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -436,48 +491,47 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           <p className="mt-4 text-gray-500 dark:text-gray-400">Loading your collection...</p>
         </div>
       ) : currentRelease ? (
-        <div className={`transition-all duration-300 ${isAnimating ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
-          <button
-            onClick={openOnDiscogs}
-            className="w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow group"
-          >
-            <div className="relative aspect-square mb-4 bg-gray-100 dark:bg-zinc-700 rounded overflow-hidden">
-              {currentRelease.cover_image || currentRelease.thumb ? (
-                <Image
-                  src={currentRelease.cover_image || currentRelease.thumb}
-                  alt={currentRelease.title}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  sizes="(max-width: 768px) 100vw, 500px"
-                  unoptimized
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  No cover art
-                </div>
-              )}
-              <button
-                onClick={toggleFavorite}
-                className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
-                title={favorites.includes(currentRelease.instance_id) ? 'Remove from favorites' : 'Add to favorites'}
+        <button
+          onClick={openOnDiscogs}
+          className="w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow group"
+        >
+          <div className="relative aspect-square mb-4 bg-gray-100 dark:bg-zinc-700 rounded overflow-hidden">
+            {currentRelease.cover_image || currentRelease.thumb ? (
+              <Image
+                src={currentRelease.cover_image || currentRelease.thumb}
+                alt={currentRelease.title}
+                fill
+                className={`object-cover group-hover:scale-105 transition-transform ${isAnimating ? 'animate-pulse' : ''}`}
+                sizes="(max-width: 768px) 100vw, 500px"
+                unoptimized
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                No cover art
+              </div>
+            )}
+            <button
+              onClick={toggleFavorite}
+              className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+              title={favorites.includes(currentRelease.instance_id) ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              <svg
+                className={`w-6 h-6 ${favorites.includes(currentRelease.instance_id) ? 'text-red-500 fill-current' : 'text-white'}`}
+                viewBox="0 0 24 24"
+                fill={favorites.includes(currentRelease.instance_id) ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                strokeWidth="2"
               >
-                <svg
-                  className={`w-6 h-6 ${favorites.includes(currentRelease.instance_id) ? 'text-red-500 fill-current' : 'text-white'}`}
-                  viewBox="0 0 24 24"
-                  fill={favorites.includes(currentRelease.instance_id) ? 'currentColor' : 'none'}
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-              </button>
-            </div>
-            <div className="text-center">
-              <h2 className="text-lg font-bold mb-1 truncate dark:text-white">{currentRelease.title}</h2>
-              <p className="text-gray-500 dark:text-gray-400 truncate">
-                {currentRelease.artists?.[0]?.name || 'Unknown Artist'}
-              </p>
-              {currentRelease.year && (
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            </button>
+          </div>
+          <div className="text-center">
+            <h2 className="text-lg font-bold mb-1 truncate dark:text-white">{currentRelease.title}</h2>
+            <p className="text-gray-500 dark:text-gray-400 truncate">
+              {currentRelease.artists?.[0]?.name || 'Unknown Artist'}
+            </p>
+            {currentRelease.year && (
               <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">{currentRelease.year}</p>
             )}
           </div>
@@ -496,24 +550,42 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
                 <p><span className="font-medium">Label:</span> {currentRelease.labels[0].name} ({currentRelease.labels[0].catno})</p>
               )}
             </div>
-          )}
-          <div className="flex justify-center gap-2 mt-2">
-            <button
-              onClick={() => setShowDetails(!showDetails)}
-              className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-            >
-              {showDetails ? 'Hide Details (D)' : 'Show Details (D)'}
-            </button>
-            <span className="text-gray-300 dark:text-gray-600">|</span>
-            <button
-              onClick={openOnDiscogs}
-              className="text-xs text-blue-500 dark:text-blue-400 hover:underline"
-            >
-              Open on Discogs
-            </button>
-          </div>
+            )}
+            <div className="flex justify-center gap-2 mt-2">
+              <button
+                onClick={() => setShowDetails(!showDetails)}
+                className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                {showDetails ? 'Hide Details (D)' : 'Show Details (D)'}
+              </button>
+            </div>
+            <div className="flex justify-center gap-3 mt-2">
+              <button onClick={openOnDiscogs} className="p-1.5 rounded-full bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600" title="Discogs">
+                <img src="https://cdn.simpleicons.org/discogs" className="w-4 h-4 dark:invert" />
+              </button>
+              <button onClick={() => openInService('spotify')} className="p-1.5 rounded-full bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600" title="Spotify">
+                <img src="https://cdn.simpleicons.org/spotify" className="w-4 h-4" style={{color: '#1DB954'}} />
+              </button>
+              <button onClick={() => openInService('apple')} className="p-1.5 rounded-full bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600" title="Apple Music">
+                <img src="https://cdn.simpleicons.org/applemusic" className="w-4 h-4" style={{color: '#FC3C44'}} />
+              </button>
+              <button onClick={() => openInService('tidal')} className="p-1.5 rounded-full bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600" title="Tidal">
+                <img src="https://cdn.simpleicons.org/tidal" className="w-4 h-4" style={{color: '#000000'}} />
+              </button>
+              <button onClick={() => openInService('youtube')} className="p-1.5 rounded-full bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600" title="YouTube Music">
+                <img src="https://cdn.simpleicons.org/youtubemusic" className="w-4 h-4" style={{color: '#FF0000'}} />
+              </button>
+              {/*
+              {plexampUrl && (
+                <button onClick={() => openInPlexamp(currentRelease)} className="p-1.5 rounded-full bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600" title="Plexamp">
+                  <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                  </svg>
+                </button>
+              )}
+              */}
+            </div>
           </button>
-        </div>
       ) : (
         <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-8 text-center">
           {collection.length > 0 ? (
@@ -596,73 +668,24 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 
       {history.length > 0 && (
         <div className="mt-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs text-gray-500 dark:text-gray-400">Recent</h3>
-            <button
-              onClick={() => {
-                setHistory([]);
-                localStorage.setItem('vinyl_history', '[]');
-              }}
-              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              Clear
-            </button>
-          </div>
-          <div 
-            className="relative touch-pan-x"
-            onTouchStart={(e) => {
-              const touch = e.touches[0];
-              (e.currentTarget as HTMLElement).dataset.touchStartX = String(touch.clientX);
-            }}
-            onTouchEnd={(e) => {
-              const el = e.currentTarget;
-              const startX = parseFloat(el.dataset.touchStartX || '0');
-              const endX = e.changedTouches[0].clientX;
-              const diff = startX - endX;
-              if (Math.abs(diff) > 50) {
-                const currentIdx = Math.floor(history.length / 2);
-                const newIdx = diff > 0 
-                  ? Math.min(currentIdx + 1, history.length - 1) 
-                  : Math.max(currentIdx - 1, 0);
-                setCurrentRelease(history[newIdx]);
-              }
-            }}
-            onWheel={(e) => {
-              if (e.deltaY !== 0) {
-                const currentIdx = Math.floor(history.length / 2);
-                const newIdx = e.deltaY > 0 
-                  ? Math.min(currentIdx + 1, history.length - 1) 
-                  : Math.max(currentIdx - 1, 0);
-                setCurrentRelease(history[newIdx]);
-              }
-            }}
-          >
-            <div className="flex items-center justify-center gap-1 overflow-hidden py-2 select-none">
-              {history.map((r, idx) => {
-                const isCenter = idx === Math.floor(history.length / 2);
-                const offset = idx - Math.floor(history.length / 2);
-                return (
-                  <button
-                    key={r.instance_id}
-                    onClick={() => setCurrentRelease(r)}
-                    className={`relative flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden border-2 hover:border-blue-500 ${isCenter ? 'w-20 h-20 scale-110 z-10' : 'w-12 h-12 scale-90 opacity-60'}`}
-                    style={{
-                      transform: `translateX(${offset * 15}px) scale(${isCenter ? 1.1 : 0.8})`,
-                      opacity: isCenter ? 1 : 0.5,
-                    }}
-                  >
-                    {r.thumb ? (
-                      <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
-                    ) : (
-                      <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-xs">?</div>
-                    )}
-                    {favorites.includes(r.instance_id) && (
-                      <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+          <h3 className="text-xs text-gray-500 dark:text-gray-400 mb-2">Recent</h3>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {history.map((r) => (
+              <button
+                key={r.instance_id}
+                onClick={() => setCurrentRelease(r)}
+                className="flex-shrink-0 w-12 h-12 relative rounded overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors"
+              >
+                {r.thumb ? (
+                  <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-xs">?</div>
+                )}
+                {favorites.includes(r.instance_id) && (
+                  <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
+                )}
+              </button>
+            ))}
           </div>
         </div>
       )}
