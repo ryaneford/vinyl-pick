@@ -530,33 +530,6 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 
   return (
     <div className="max-w-lg w-full">
-      <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-2 mb-2 flex items-center justify-between">
-        <span className="text-gray-600 dark:text-gray-300">
-          Connected as <strong>{auth.username}</strong>
-        </span>
-        <div className="flex items-center gap-3">
-          {/*
-          <button
-            onClick={() => {
-              const url = prompt('Enter your Plexamp URL (e.g., http://192.168.1.10:32400 or https://plex.tv/...):', plexampUrl || 'http://localhost:32400');
-              if (url) savePlexampUrl(url);
-            }}
-            className={`text-sm ${plexampUrl ? 'text-green-500' : 'text-gray-400'} hover:text-gray-600 dark:hover:text-gray-300`}
-            title="Configure Plexamp URL"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-            </svg>
-          </button>
-          */}
-          <button
-            onClick={logout}
-            className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            Disconnect
-          </button>
-        </div>
-      </div>
 
       {isFetchingCollection ? (
         <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-12 text-center">
@@ -974,6 +947,9 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         <button onClick={() => setShowFaq(true)} className="hover:text-gray-600 dark:hover:text-gray-300">FAQ</button>
         <span>|</span>
         <a href="https://github.com/ryaneford/vinyl-pick" target="_blank" rel="noopener noreferrer" className="hover:text-gray-600 dark:hover:text-gray-300">Source</a>
+        <span>|</span>
+        <span className="text-gray-400 dark:text-gray-600">logged in as {auth.username}</span>
+        <button onClick={logout} className="text-gray-400 dark:text-gray-600 hover:text-red-500">Disconnect</button>
       </div>
 
       {showStats && (

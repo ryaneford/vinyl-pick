@@ -2,6 +2,23 @@
 
 All notable changes to Vinyl Pick will be documented in this file.
 
+## [1.9.0] - 2026-04-14
+
+### Changed
+- Moved "Connected as" header to footer — username and Disconnect now in footer bar
+- Filter button removed from action row (commented out, can be restored)
+- Pick Another, Mark as Listened, and Start Over evenly spaced with flex-1
+- Start Over button styled red to signal destructive action
+- Mark as Listened is now the primary (green, full-width) button
+- Removed Skip button and S keyboard shortcut
+- Mark as Listened explicitly logs and removes from pick pool
+- Start Over only resets pick pool, preserves listening journal
+- Clear History deletes journal (with confirmation dialog)
+- Listening Journal shows timestamps (relative: "2m ago", "3d ago")
+- Progress bar shows "X of Y picked" and "N logged as listened"
+
+---
+
 ## [1.8.2] - 2026-04-14
 
 ### Changed
