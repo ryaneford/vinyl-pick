@@ -2,6 +2,26 @@
 
 All notable changes to Vinyl Pick will be documented in this file.
 
+## [1.7.0] - 2026-04-14
+
+### Added
+- Animated slide/fade transition when picking a new record
+- Vinyl spin animation on album art during pick
+- Shake animation on Pick Another button hover
+- Progress bar showing percentage of collection played
+- Record of the Day - daily cached pick with album art
+- PWA support - installable on mobile home screen
+- Confetti celebration when entire collection has been played
+- Album detail tooltips on Recent and Favorites covers
+- Mobile swipe on Recent/Favorites cover rows
+
+### Changed
+- Favorites section temporarily hidden (commented out)
+- README screenshot centered with width constraint
+- Recent section uses 3D cover flow with perspective
+
+---
+
 ## [1.6.0] - 2026-04-14
 
 ### Added

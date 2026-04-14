@@ -1,9 +1,14 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Vinyl Pick - Random Record Picker',
   description: 'Pick a random vinyl record from your Discogs collection',
+  manifest: '/manifest.json',
+};
+
+export const viewport: Viewport = {
+  themeColor: '#171717',
 };
 
 export default function RootLayout({

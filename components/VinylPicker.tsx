@@ -47,6 +47,9 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
   const [showFaq, setShowFaq] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [displayKey, setDisplayKey] = useState(0);
+  const [dailyPick, setDailyPick] = useState<DiscogsRelease | null>(null);
   const [plexampUrl, setPlexampUrl] = useState<string>('');
   const [historyOffset, setHistoryOffset] = useState(0);
   const [favoritesOffset, setFavoritesOffset] = useState(0);
@@ -285,9 +288,15 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
     setIsAnimating(true);
     setTimeout(() => {
       setCurrentRelease(selected);
+      setDisplayKey(prev => prev + 1);
       if (!skip) {
-        savePlayed([...playedIds, selected.instance_id]);
+        const newPlayed = [...playedIds, selected.instance_id];
+        savePlayed(newPlayed);
         saveHistory([selected, ...history]);
+        if (newPlayed.length === collection.length) {
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 4000);
+        }
       }
       setIsAnimating(false);
     }, 300);
@@ -298,6 +307,31 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       fetchCollection();
     }
   }, [auth, collection.length, isFetchingCollection, fetchCollection]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('vinyl_daily_pick');
+    const today = new Date().toDateString();
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.date === today && collection.some(r => r.instance_id === parsed.release.instance_id)) {
+          setDailyPick(parsed.release);
+        } else {
+          localStorage.removeItem('vinyl_daily_pick');
+        }
+      } catch {
+        localStorage.removeItem('vinyl_daily_pick');
+      }
+    }
+    if (!dailyPick && collection.length > 0) {
+      const unplayed = collection.filter(r => !playedIds.includes(r.instance_id));
+      const pool = unplayed.length > 0 ? unplayed : collection;
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      const pick = pool[randomIndex];
+      setDailyPick(pick);
+      localStorage.setItem('vinyl_daily_pick', JSON.stringify({ date: today, release: pick }));
+    }
+  }, [collection, playedIds]);
 
   useEffect(() => {
     if (collection.length > 0 && !currentRelease) {
@@ -503,20 +537,24 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           <p className="mt-4 text-gray-500 dark:text-gray-400">Loading your collection...</p>
         </div>
       ) : currentRelease ? (
-        <div className="w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow group"
+        <div className="w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow group animate-fade-slide-in"
+             key={displayKey}
              onTouchStart={handleTouchStart}
              onTouchMove={handleTouchMove}
              onTouchEnd={handleTouchEnd}>
           <div className="relative aspect-square mb-4 bg-gray-100 dark:bg-zinc-700 rounded overflow-hidden cursor-pointer" onClick={openOnDiscogs}>
             {currentRelease.cover_image || currentRelease.thumb ? (
-              <Image
-                src={currentRelease.cover_image || currentRelease.thumb}
-                alt={currentRelease.title}
-                fill
-                className={`object-cover group-hover:scale-105 transition-transform ${isAnimating ? 'animate-pulse' : ''}`}
-                sizes="(max-width: 768px) 100vw, 500px"
-                unoptimized
-              />
+              <div className="relative w-full h-full">
+                <div className="absolute inset-0 rounded-full bg-black/20 z-10 pointer-events-none" style={{background: 'radial-gradient(circle, rgba(0,0,0,0.3) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.1) 100%)'}} />
+                <Image
+                  src={currentRelease.cover_image || currentRelease.thumb}
+                  alt={currentRelease.title}
+                  fill
+                  className={`object-cover group-hover:scale-105 transition-transform ${isAnimating ? 'animate-vinyl-spin' : ''}`}
+                  sizes="(max-width: 768px) 100vw, 500px"
+                  unoptimized
+                />
+              </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400">
                 No cover art
@@ -605,7 +643,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         <button
           onClick={() => pickRandomRelease()}
           disabled={isLoading || collection.length === 0}
-          className="flex-1 bg-black dark:bg-zinc-700 text-white dark:text-white py-3 rounded-lg font-medium disabled:opacity-50"
+          className="flex-1 bg-black dark:bg-zinc-700 text-white dark:text-white py-3 rounded-lg font-medium disabled:opacity-50 animate-shake"
         >
           Pick Another
         </button>
@@ -679,15 +717,35 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
                 ‹
               </button>
               <div 
-                className="flex items-center justify-center gap-1 overflow-hidden touch-pan-x"
-                style={{ touchAction: 'pan-x' }}
+                className="flex items-center justify-center gap-1 overflow-hidden"
+                onTouchStart={(e) => {
+                  const touch = e.touches[0];
+                  (e.currentTarget as HTMLDivElement).dataset.swipeStartX = String(touch.clientX);
+                  (e.currentTarget as HTMLDivElement).dataset.swipeStartY = String(touch.clientY);
+                }}
+                onTouchEnd={(e) => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  const startX = parseFloat(el.dataset.swipeStartX || '0');
+                  const startY = parseFloat(el.dataset.swipeStartY || '0');
+                  const endX = e.changedTouches[0].clientX;
+                  const endY = e.changedTouches[0].clientY;
+                  const diffX = endX - startX;
+                  const diffY = endY - startY;
+                  if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+                    if (diffX < 0) {
+                      setHistoryOffset(Math.min(history.length - MAX_VISIBLE, historyOffset + MAX_VISIBLE));
+                    } else {
+                      setHistoryOffset(Math.max(0, historyOffset - MAX_VISIBLE));
+                    }
+                  }
+                }}
               >
                 {history.slice(historyOffset, historyOffset + MAX_VISIBLE).map((r, idx) => (
                   <button
                     key={r.instance_id}
                     onClick={() => setCurrentRelease(r)}
-                    onTouchStart={() => {}}
-                    className="flex-shrink-0 w-16 h-16 relative rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all duration-300"
+                    title={`${r.artists?.[0]?.name || ''} - ${r.title}${r.year ? ` (${r.year})` : ''}`}
+                    className="flex-shrink-0 w-16 h-16 relative rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all duration-300 group/thumb"
                     style={{
                       transform: idx === 0 ? 'scale(1.1) translateZ(10px)' : idx === 1 ? 'scale(0.95) translateZ(-5px) rotateY(-15deg)' : idx === MAX_VISIBLE - 1 ? 'scale(0.95) translateZ(-5px) rotateY(15deg)' : 'scale(0.85) translateZ(-10px)',
                       zIndex: MAX_VISIBLE - idx,
@@ -718,6 +776,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         </div>
       )}
 
+      {/* Favorites section - commented out for now
       {favorites.length > 0 && (
         <div className="mt-4">
           <h3 className="text-xs text-gray-500 dark:text-gray-400 mb-2">Favorites ({favorites.length})</h3>
@@ -729,11 +788,36 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
             >
               ‹
             </button>
-            <div className="flex gap-2 overflow-hidden">
+            <div 
+              className="flex gap-2 overflow-hidden"
+              onTouchStart={(e) => {
+                const touch = e.touches[0];
+                (e.currentTarget as HTMLDivElement).dataset.swipeStartX = String(touch.clientX);
+                (e.currentTarget as HTMLDivElement).dataset.swipeStartY = String(touch.clientY);
+              }}
+              onTouchEnd={(e) => {
+                const el = e.currentTarget as HTMLDivElement;
+                const startX = parseFloat(el.dataset.swipeStartX || '0');
+                const startY = parseFloat(el.dataset.swipeStartY || '0');
+                const endX = e.changedTouches[0].clientX;
+                const endY = e.changedTouches[0].clientY;
+                const diffX = endX - startX;
+                const diffY = endY - startY;
+                const favCount = collection.filter((r) => favorites.includes(r.instance_id)).length;
+                if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+                  if (diffX < 0) {
+                    setFavoritesOffset(Math.min(favCount - MAX_VISIBLE, favoritesOffset + MAX_VISIBLE));
+                  } else {
+                    setFavoritesOffset(Math.max(0, favoritesOffset - MAX_VISIBLE));
+                  }
+                }
+              }}
+            >
               {collection.filter((r) => favorites.includes(r.instance_id)).slice(favoritesOffset, favoritesOffset + MAX_VISIBLE).map((r) => (
                 <button
                   key={r.instance_id}
                   onClick={() => setCurrentRelease(r)}
+                  title={`${r.artists?.[0]?.name || ''} - ${r.title}${r.year ? ` (${r.year})` : ''}`}
                   className="flex-shrink-0 w-16 h-16 relative rounded-lg overflow-hidden border-2 border-red-500 hover:border-red-600 transition-transform hover:scale-105"
                 >
                   {r.thumb ? (
@@ -757,13 +841,59 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           </div>
         </div>
       )}
+      */}
 
       {error && <p className="text-red-500 text-center mt-4">{error}</p>}
 
-      <p className="text-center text-gray-400 dark:text-gray-500 text-sm mt-4">
-        {collection.length - playedIds.length} / {collection.length} records remaining
-        {filterGenre || filterDecade ? ' (filtered)' : ''}
-      </p>
+      <div className="mt-4">
+        <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-1.5 overflow-hidden">
+          <div
+            className="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full transition-all duration-500"
+            style={{ width: `${collection.length > 0 ? (playedIds.length / collection.length) * 100 : 0}%` }}
+          />
+        </div>
+        <p className="text-center text-gray-400 dark:text-gray-500 text-sm mt-1">
+          {collection.length - playedIds.length} / {collection.length} records remaining
+          {filterGenre || filterDecade ? ' (filtered)' : ''}
+        </p>
+      </div>
+
+      {dailyPick && (
+        <div className="mt-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 dark:border-purple-500/30 rounded-lg p-3 flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-purple-400 dark:text-purple-300 mb-1">Record of the Day</p>
+            <p className="text-sm font-medium dark:text-white truncate">{dailyPick.title}</p>
+            <p className="text-xs text-gray-400">{dailyPick.artists?.[0]?.name || 'Unknown Artist'}{dailyPick.year ? ` · ${dailyPick.year}` : ''}</p>
+          </div>
+          <div className="w-16 h-16 relative rounded overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-zinc-700">
+            {dailyPick.thumb ? (
+              <Image src={dailyPick.cover_image || dailyPick.thumb} alt={dailyPick.title} fill className="object-cover" unoptimized />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">?</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showConfetti && (
+        <div className="fixed inset-0 pointer-events-none z-50">
+          {Array.from({ length: 30 }).map((_, i) => (
+            <div
+              key={i}
+              className="confetti-piece"
+              style={{
+                left: `${Math.random() * 100}%`,
+                backgroundColor: ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6bcb'][i % 5],
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${2 + Math.random() * 2}s`,
+                borderRadius: Math.random() > 0.5 ? '50%' : '0',
+                width: `${6 + Math.random() * 8}px`,
+                height: `${6 + Math.random() * 8}px`,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       <p className="text-center text-gray-500 dark:text-gray-600 text-xs mt-2">
         Keyboard: Space=Pick | S=Skip | R=Reset
