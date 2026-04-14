@@ -31,12 +31,19 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 
   const [collection, setCollection] = useState<DiscogsRelease[]>([]);
   const [playedIds, setPlayedIds] = useState<number[]>([]);
+  const [favorites, setFavorites] = useState<number[]>([]);
   const [currentRelease, setCurrentRelease] = useState<DiscogsRelease | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingCollection, setIsFetchingCollection] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showVerifierInput, setShowVerifierInput] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [showDetails, setShowDetails] = useState(false);
+  const [history, setHistory] = useState<DiscogsRelease[]>([]);
+  const [filterGenre, setFilterGenre] = useState<string>('');
+  const [filterDecade, setFilterDecade] = useState<string>('');
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const searchParams = useSearchParams();
   const oauthVerifier = searchParams.get('oauth_verifier');
@@ -46,6 +53,8 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
     const storedPlayed = localStorage.getItem('vinyl_played');
     const storedOauth = localStorage.getItem('oauth_pending');
     const storedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
+    const storedFavorites = localStorage.getItem('vinyl_favorites');
+    const storedHistory = localStorage.getItem('vinyl_history');
 
     if (storedTheme) {
       setTheme(storedTheme);
@@ -69,6 +78,22 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       }
     }
 
+    if (storedFavorites) {
+      try {
+        setFavorites(JSON.parse(storedFavorites));
+      } catch {
+        localStorage.removeItem('vinyl_favorites');
+      }
+    }
+
+    if (storedHistory) {
+      try {
+        setHistory(JSON.parse(storedHistory));
+      } catch {
+        localStorage.removeItem('vinyl_history');
+      }
+    }
+
     if (storedOauth && oauthVerifier) {
       handleOAuthCallback(oauthVerifier);
     }
@@ -84,6 +109,16 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
   const savePlayed = (ids: number[]) => {
     localStorage.setItem('vinyl_played', JSON.stringify(ids));
     setPlayedIds(ids);
+  };
+
+  const saveFavorites = (ids: number[]) => {
+    localStorage.setItem('vinyl_favorites', JSON.stringify(ids));
+    setFavorites(ids);
+  };
+
+  const saveHistory = (releases: DiscogsRelease[]) => {
+    localStorage.setItem('vinyl_history', JSON.stringify(releases.slice(0, 10)));
+    setHistory(releases.slice(0, 10));
   };
 
   const connectDiscogs = async () => {
@@ -192,7 +227,16 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
   const pickRandomRelease = useCallback((skip = false) => {
     if (collection.length === 0) return;
 
-    const unplayed = collection.filter((r) => !playedIds.includes(r.instance_id));
+    let filteredCollection = collection;
+    if (filterGenre) {
+      filteredCollection = filteredCollection.filter((r) => r.genres?.includes(filterGenre));
+    }
+    if (filterDecade) {
+      const decadeStart = parseInt(filterDecade);
+      filteredCollection = filteredCollection.filter((r) => r.year && r.year >= decadeStart && r.year < decadeStart + 10);
+    }
+
+    const unplayed = filteredCollection.filter((r) => !playedIds.includes(r.instance_id));
     if (unplayed.length === 0) {
       setError('All records have been played! Reset history to start over.');
       return;
@@ -200,11 +244,17 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 
     const randomIndex = Math.floor(Math.random() * unplayed.length);
     const selected = unplayed[randomIndex];
-    setCurrentRelease(selected);
-    if (!skip) {
-      savePlayed([...playedIds, selected.instance_id]);
-    }
-  }, [collection, playedIds]);
+    
+    setIsAnimating(true);
+    setTimeout(() => {
+      setCurrentRelease(selected);
+      if (!skip) {
+        savePlayed([...playedIds, selected.instance_id]);
+        saveHistory([selected, ...history]);
+      }
+      setIsAnimating(false);
+    }, 300);
+  }, [collection, playedIds, filterGenre, filterDecade, history]);
 
   useEffect(() => {
     if (auth && collection.length === 0 && !isFetchingCollection) {
@@ -225,13 +275,52 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
     setError(null);
   };
 
+  const toggleFavorite = () => {
+    if (!currentRelease) return;
+    const isFav = favorites.includes(currentRelease.instance_id);
+    if (isFav) {
+      saveFavorites(favorites.filter((id) => id !== currentRelease.instance_id));
+    } else {
+      saveFavorites([...favorites, currentRelease.instance_id]);
+    }
+  };
+
+  const toggleFilters = () => {
+    setShowFilters(!showFilters);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement) return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        pickRandomRelease();
+      } else if (e.code === 'KeyS' && !e.shiftKey) {
+        e.preventDefault();
+        pickRandomRelease(true);
+      } else if (e.code === 'KeyR') {
+        e.preventDefault();
+        resetHistory();
+      } else if (e.code === 'KeyD') {
+        e.preventDefault();
+        setShowDetails(!showDetails);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [pickRandomRelease, showDetails]);
+
   const logout = () => {
     localStorage.removeItem('discogs_auth');
     localStorage.removeItem('vinyl_played');
+    localStorage.removeItem('vinyl_favorites');
+    localStorage.removeItem('vinyl_history');
     localStorage.removeItem('oauth_pending');
     setAuth(null);
     setCollection([]);
     setPlayedIds([]);
+    setFavorites([]);
+    setHistory([]);
     setCurrentRelease(null);
     if (onLogout) onLogout();
   };
@@ -357,7 +446,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
                 src={currentRelease.cover_image || currentRelease.thumb}
                 alt={currentRelease.title}
                 fill
-                className="object-cover group-hover:scale-105 transition-transform"
+                className={`object-cover group-hover:scale-105 transition-transform ${isAnimating ? 'animate-pulse' : ''}`}
                 sizes="(max-width: 768px) 100vw, 500px"
                 unoptimized
               />
@@ -366,6 +455,21 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
                 No cover art
               </div>
             )}
+            <button
+              onClick={toggleFavorite}
+              className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+              title={favorites.includes(currentRelease.instance_id) ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              <svg
+                className={`w-6 h-6 ${favorites.includes(currentRelease.instance_id) ? 'text-red-500 fill-current' : 'text-white'}`}
+                viewBox="0 0 24 24"
+                fill={favorites.includes(currentRelease.instance_id) ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            </button>
           </div>
           <div className="text-center">
             <h2 className="text-lg font-bold mb-1 truncate dark:text-white">{currentRelease.title}</h2>
@@ -376,9 +480,37 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
               <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">{currentRelease.year}</p>
             )}
           </div>
-          <p className="text-center mt-4 text-sm text-blue-500 dark:text-blue-400 group-hover:underline">
-            Click to open on Discogs
-          </p>
+          {showDetails && (
+            <div className="mt-4 text-left text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-zinc-700 rounded p-3">
+              {currentRelease.genres && currentRelease.genres.length > 0 && (
+                <p><span className="font-medium">Genre:</span> {currentRelease.genres.join(', ')}</p>
+              )}
+              {currentRelease.styles && currentRelease.styles.length > 0 && (
+                <p><span className="font-medium">Style:</span> {currentRelease.styles.join(', ')}</p>
+              )}
+              {currentRelease.country && (
+                <p><span className="font-medium">Country:</span> {currentRelease.country}</p>
+              )}
+              {currentRelease.labels && currentRelease.labels.length > 0 && (
+                <p><span className="font-medium">Label:</span> {currentRelease.labels[0].name} ({currentRelease.labels[0].catno})</p>
+              )}
+            </div>
+          )}
+          <div className="flex justify-center gap-2 mt-2">
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+            >
+              {showDetails ? 'Hide Details (D)' : 'Show Details (D)'}
+            </button>
+            <span className="text-gray-300 dark:text-gray-600">|</span>
+            <button
+              onClick={openOnDiscogs}
+              className="text-xs text-blue-500 dark:text-blue-400 hover:underline"
+            >
+              Open on Discogs
+            </button>
+          </div>
         </button>
       ) : (
         <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-8 text-center">
@@ -392,10 +524,19 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 
       <div className="flex gap-4 mt-4">
         <button
+          onClick={toggleFilters}
+          className={`px-4 py-3 border rounded-lg ${showFilters ? 'bg-gray-200 dark:bg-zinc-600' : 'border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700'}`}
+          title="Filter collection"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+        </button>
+        <button
           onClick={() => pickRandomRelease(true)}
           disabled={isLoading || collection.length === 0}
           className="px-4 py-3 border border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg"
-          title="Skip this record without counting it as played"
+          title="Skip this record without counting it as played (S)"
         >
           Skip
         </button>
@@ -409,15 +550,102 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         <button
           onClick={resetHistory}
           className="px-4 py-3 border border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg"
+          title="Reset history (R)"
         >
           Reset
         </button>
       </div>
 
+      {showFilters && collection.length > 0 && (
+        <div className="mt-4 bg-gray-50 dark:bg-zinc-700 rounded-lg p-4">
+          <h3 className="text-sm font-medium mb-2 dark:text-white">Filters</h3>
+          <div className="flex gap-4">
+            <select
+              value={filterGenre}
+              onChange={(e) => setFilterGenre(e.target.value)}
+              className="flex-1 p-2 border border-gray-300 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white rounded text-sm"
+            >
+              <option value="">All Genres</option>
+              {Array.from(new Set(collection.flatMap((r) => r.genres || []))).sort().map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+            <select
+              value={filterDecade}
+              onChange={(e) => setFilterDecade(e.target.value)}
+              className="flex-1 p-2 border border-gray-300 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white rounded text-sm"
+            >
+              <option value="">All Decades</option>
+              {Array.from(new Set(collection.filter((r) => r.year).map((r) => Math.floor(r.year! / 10) * 10 + 's'))).sort().map((d) => (
+                <option key={d} value={d.slice(0, -1)}>{d}</option>
+              ))}
+            </select>
+          </div>
+          {(filterGenre || filterDecade) && (
+            <button
+              onClick={() => { setFilterGenre(''); setFilterDecade(''); }}
+              className="mt-2 text-xs text-blue-500 dark:text-blue-400"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
+
+      {history.length > 0 && (
+        <div className="mt-4">
+          <h3 className="text-xs text-gray-500 dark:text-gray-400 mb-2">Recent</h3>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {history.map((r) => (
+              <button
+                key={r.instance_id}
+                onClick={() => setCurrentRelease(r)}
+                className="flex-shrink-0 w-12 h-12 relative rounded overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors"
+              >
+                {r.thumb ? (
+                  <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-xs">?</div>
+                )}
+                {favorites.includes(r.instance_id) && (
+                  <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {favorites.length > 0 && (
+        <div className="mt-4">
+          <h3 className="text-xs text-gray-500 dark:text-gray-400 mb-2">Favorites ({favorites.length})</h3>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {collection.filter((r) => favorites.includes(r.instance_id)).map((r) => (
+              <button
+                key={r.instance_id}
+                onClick={() => setCurrentRelease(r)}
+                className="flex-shrink-0 w-12 h-12 relative rounded overflow-hidden border-2 border-red-500 hover:border-red-600 transition-colors"
+              >
+                {r.thumb ? (
+                  <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-xs">?</div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {error && <p className="text-red-500 text-center mt-4">{error}</p>}
 
       <p className="text-center text-gray-400 dark:text-gray-500 text-sm mt-4">
         {collection.length - playedIds.length} / {collection.length} records remaining
+        {filterGenre || filterDecade ? ' (filtered)' : ''}
+      </p>
+
+      <p className="text-center text-gray-500 dark:text-gray-600 text-xs mt-2">
+        Keyboard: Space=Pick | S=Skip | R=Reset | D=Details
       </p>
 
       {collection.length > 0 && <StatsPanel collection={collection} playedIds={playedIds} />}
@@ -426,6 +654,8 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 }
 
 function StatsPanel({ collection, playedIds }: { collection: DiscogsRelease[]; playedIds: number[] }) {
+  const [isOpen, setIsOpen] = useState(false);
+
   const uniqueArtists = new Set(
     collection.filter((r) => playedIds.includes(r.instance_id)).flatMap((r) => r.artists?.map((a) => a.name) || [])
   ).size;
@@ -448,34 +678,49 @@ function StatsPanel({ collection, playedIds }: { collection: DiscogsRelease[]; p
   const decades = Object.entries(decadeCounts).sort((a, b) => b[0].localeCompare(a[0]));
 
   return (
-    <div className="mt-6 bg-gray-50 dark:bg-zinc-700 rounded-lg p-4">
-      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Collection Stats</h3>
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <span className="text-gray-400 dark:text-gray-500">Total plays:</span>{' '}
-          <span className="font-medium dark:text-white">{playedIds.length}</span>
-        </div>
-        <div>
-          <span className="text-gray-400 dark:text-gray-500">Unique artists:</span>{' '}
-          <span className="font-medium dark:text-white">{uniqueArtists}</span>
-        </div>
-        {topGenres.length > 0 && (
-          <div className="col-span-2">
-            <span className="text-gray-400 dark:text-gray-500">Top genres: </span>
-            <span className="font-medium dark:text-white">
-              {topGenres.map((g) => `${g[0]} (${g[1]})`).join(', ')}
-            </span>
+    <div className="mt-6 bg-gray-50 dark:bg-zinc-700 rounded-lg overflow-hidden">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-4 py-3 flex items-center justify-between text-left"
+      >
+        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Collection Stats</h3>
+        <svg
+          className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {isOpen && (
+        <div className="px-4 pb-4 grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="text-gray-400 dark:text-gray-500">Total plays:</span>{' '}
+            <span className="font-medium dark:text-white">{playedIds.length}</span>
           </div>
-        )}
-        {decades.length > 0 && (
-          <div className="col-span-2">
-            <span className="text-gray-400 dark:text-gray-500">Decades: </span>
-            <span className="font-medium dark:text-white">
-              {decades.map((d) => d[0]).join(', ')}
-            </span>
+          <div>
+            <span className="text-gray-400 dark:text-gray-500">Unique artists:</span>{' '}
+            <span className="font-medium dark:text-white">{uniqueArtists}</span>
           </div>
-        )}
-      </div>
+          {topGenres.length > 0 && (
+            <div className="col-span-2">
+              <span className="text-gray-400 dark:text-gray-500">Top genres: </span>
+              <span className="font-medium dark:text-white">
+                {topGenres.map((g) => `${g[0]} (${g[1]})`).join(', ')}
+              </span>
+            </div>
+          )}
+          {decades.length > 0 && (
+            <div className="col-span-2">
+              <span className="text-gray-400 dark:text-gray-500">Decades: </span>
+              <span className="font-medium dark:text-white">
+                {decades.map((d) => d[0]).join(', ')}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
