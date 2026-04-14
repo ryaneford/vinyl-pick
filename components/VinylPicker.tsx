@@ -597,23 +597,33 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       {history.length > 0 && (
         <div className="mt-4">
           <h3 className="text-xs text-gray-500 dark:text-gray-400 mb-2">Recent</h3>
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {history.map((r) => (
-              <button
-                key={r.instance_id}
-                onClick={() => setCurrentRelease(r)}
-                className="flex-shrink-0 w-12 h-12 relative rounded overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors"
-              >
-                {r.thumb ? (
-                  <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-xs">?</div>
-                )}
-                {favorites.includes(r.instance_id) && (
-                  <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
-                )}
-              </button>
-            ))}
+          <div className="relative">
+            <div className="flex items-center justify-center gap-1 overflow-hidden py-2">
+              {history.map((r, idx) => {
+                const isCenter = idx === Math.floor(history.length / 2);
+                const offset = idx - Math.floor(history.length / 2);
+                return (
+                  <button
+                    key={r.instance_id}
+                    onClick={() => setCurrentRelease(r)}
+                    className={`relative flex-shrink-0 transition-all duration-300 rounded-lg overflow-hidden border-2 hover:border-blue-500 ${isCenter ? 'w-20 h-20 scale-110 z-10' : 'w-12 h-12 scale-90 opacity-60'}`}
+                    style={{
+                      transform: `translateX(${offset * 15}px) scale(${isCenter ? 1.1 : 0.8})`,
+                      opacity: isCenter ? 1 : 0.5,
+                    }}
+                  >
+                    {r.thumb ? (
+                      <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-xs">?</div>
+                    )}
+                    {favorites.includes(r.instance_id) && (
+                      <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
