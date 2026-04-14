@@ -2,8 +2,6 @@
 
 A simple web app that picks a random vinyl record from your Discogs collection.
 
-![Vinyl Pick Screenshot](/screenshot.png)
-
 ## Features
 
 - Connect with your Discogs account via OAuth
@@ -130,6 +128,10 @@ For production deployment:
 5. App exchanges verifier for access token
 6. App fetches user's vinyl collection
 7. User clicks "Pick Another" for random selection
+
+## Screenshots
+<img width="550" height="800" alt="vinyl-picker-screenshot01" src="https://github.com/user-attachments/assets/84f18c23-3327-43ca-8ecc-c97a569f05fa" />
+
 
 ## Technologies
 
