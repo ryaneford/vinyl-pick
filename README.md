@@ -130,7 +130,8 @@ For production deployment:
 7. User clicks "Pick Another" for random selection
 
 ## Screenshots
-<img width="550" height="800" alt="vinyl-picker-screenshot01" src="https://github.com/user-attachments/assets/84f18c23-3327-43ca-8ecc-c97a569f05fa" />
+<img width="800" height="1500" alt="vinylpickerscreenshot" src="https://github.com/user-attachments/assets/515252e3-4a3f-450e-8833-29b0350641d7" />
+
 
 
 ## Technologies
