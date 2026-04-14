@@ -653,7 +653,8 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         </div>
       )}
 
-      <div className="flex gap-2 mt-2 items-center">
+      <div className="flex gap-2 mt-2 items-center justify-center">
+        {/* Filter button - commented out for now
         <button
           onClick={toggleFilters}
           className={`px-3 py-3 border rounded-lg ${showFilters ? 'bg-gray-200 dark:bg-zinc-600' : 'border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700'}`}
@@ -663,10 +664,11 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
           </svg>
         </button>
+        */}
         <button
           onClick={() => pickRandomRelease()}
           disabled={isLoading || collection.length === 0}
-          className="px-3 py-3 border border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg text-sm"
+          className="flex-1 py-3 border border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg text-sm text-center"
           title="Pick another record (Space)"
         >
           Pick Another
@@ -675,7 +677,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           <button
             onClick={markAsListened}
             disabled={currentIsListened || history.some(h => h.release.instance_id === currentRelease.instance_id)}
-            className={`flex-1 py-3 rounded-lg font-medium text-sm ${currentIsListened || history.some(h => h.release.instance_id === currentRelease.instance_id) ? 'bg-green-600/20 text-green-400 border border-green-600/30' : 'bg-green-600 text-white hover:bg-green-700'}`}
+            className={`flex-1 py-3 rounded-lg font-medium text-sm text-center ${currentIsListened || history.some(h => h.release.instance_id === currentRelease.instance_id) ? 'bg-green-600/20 text-green-400 border border-green-600/30' : 'bg-green-600 text-white hover:bg-green-700'}`}
             title="Log as listened (M)"
           >
             {currentIsListened || history.some(h => h.release.instance_id === currentRelease.instance_id) ? '✓ Logged' : 'Mark as Listened'}
@@ -683,7 +685,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         )}
         <button
           onClick={() => setShowConfirm('reset')}
-          className="px-3 py-3 border border-red-800/50 dark:border-red-900/50 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-xs"
+          className="flex-1 py-3 border border-red-800/50 dark:border-red-900/50 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-xs text-center"
           title="Start over - reset which records are available to pick"
         >
           Start Over
