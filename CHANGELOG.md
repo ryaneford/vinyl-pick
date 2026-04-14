@@ -2,6 +2,18 @@
 
 All notable changes to Vinyl Pick will be documented in this file.
 
+## [1.8.1] - 2026-04-14
+
+### Changed
+- Removed Skip button — Pick Another is now the only way to select a record
+- Reordered button layout: Mark as Listened is now the primary (green, full-width) button
+- Pick Another is now a smaller outlined button
+- Start Over is now a red-tinted button to signal destructive action
+- Listened button shows "✓ Logged" when active and "Mark as Listened" when available
+- Removed S keyboard shortcut (Space=Pick, M=Listened, R=Start Over)
+
+---
+
 ## [1.8.0] - 2026-04-14
 
 ### Added

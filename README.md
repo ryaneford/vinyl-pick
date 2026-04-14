@@ -14,7 +14,7 @@ A simple web app that picks a random vinyl record from your Discogs collection.
 - Listening Journal with timestamps
 - Mark as Listened — explicitly log what you've actually played
 - Genre and decade filters
-- Keyboard shortcuts (Space=Pick, S=Skip, M=Listened, R=Start Over)
+- Keyboard shortcuts (Space=Pick, M=Listened, R=Start Over)
 - Stats and FAQ modals
 - Progress bar and confetti on full collection
 - PWA support (installable on mobile)

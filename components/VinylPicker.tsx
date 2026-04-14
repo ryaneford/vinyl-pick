@@ -395,9 +395,6 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       if (e.code === 'Space') {
         e.preventDefault();
         pickRandomRelease();
-      } else if (e.code === 'KeyS' && !e.shiftKey) {
-        e.preventDefault();
-        pickRandomRelease(true);
       } else if (e.code === 'KeyM') {
         e.preventDefault();
         markAsListened();
@@ -656,7 +653,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         </div>
       )}
 
-      <div className="flex gap-2 mt-4">
+      <div className="flex gap-2 mt-4 items-center">
         <button
           onClick={toggleFilters}
           className={`px-3 py-3 border rounded-lg ${showFilters ? 'bg-gray-200 dark:bg-zinc-600' : 'border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700'}`}
@@ -667,17 +664,10 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           </svg>
         </button>
         <button
-          onClick={() => pickRandomRelease(true)}
-          disabled={isLoading || collection.length === 0}
-          className="px-3 py-3 border border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg text-sm"
-          title="Skip this record without counting it as played (S)"
-        >
-          Skip
-        </button>
-        <button
           onClick={() => pickRandomRelease()}
           disabled={isLoading || collection.length === 0}
-          className="flex-1 bg-black dark:bg-zinc-700 text-white dark:text-white py-3 rounded-lg font-medium disabled:opacity-50 animate-shake text-sm"
+          className="px-3 py-3 border border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg text-sm"
+          title="Pick another record (Space)"
         >
           Pick Another
         </button>
@@ -685,15 +675,15 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           <button
             onClick={markAsListened}
             disabled={currentIsListened || history.some(h => h.release.instance_id === currentRelease.instance_id)}
-            className={`px-3 py-3 rounded-lg font-medium text-sm ${currentIsListened || history.some(h => h.release.instance_id === currentRelease.instance_id) ? 'bg-green-600/20 text-green-400 border border-green-600/30' : 'bg-green-600 text-white hover:bg-green-700'}`}
+            className={`flex-1 py-3 rounded-lg font-medium text-sm ${currentIsListened || history.some(h => h.release.instance_id === currentRelease.instance_id) ? 'bg-green-600/20 text-green-400 border border-green-600/30' : 'bg-green-600 text-white hover:bg-green-700'}`}
             title="Log as listened (M)"
           >
-            {currentIsListened || history.some(h => h.release.instance_id === currentRelease.instance_id) ? 'Logged' : 'Listened'}
+            {currentIsListened || history.some(h => h.release.instance_id === currentRelease.instance_id) ? '✓ Logged' : 'Mark as Listened'}
           </button>
         )}
         <button
           onClick={() => setShowConfirm('reset')}
-          className="px-3 py-3 border border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg text-sm"
+          className="px-3 py-3 border border-red-800/50 dark:border-red-900/50 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-xs"
           title="Start over - reset which records are available to pick"
         >
           Start Over
@@ -969,7 +959,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       )}
 
       <p className="text-center text-gray-500 dark:text-gray-600 text-xs mt-2">
-        Keyboard: Space=Pick | S=Skip | M=Listened | R=Start Over
+        Keyboard: Space=Pick | M=Listened | R=Start Over
       </p>
 
       <div className="flex items-center justify-center gap-4 mt-4 text-xs text-gray-400 dark:text-gray-500">
@@ -1035,7 +1025,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
               </div>
               <div>
                 <p className="font-medium dark:text-gray-300">Keyboard shortcuts</p>
-                <p>Space = Pick | S = Skip | M = Mark as Listened | R = Start Over</p>
+                <p>Space = Pick | M = Mark as Listened | R = Start Over</p>
               </div>
             </div>
           </div>
