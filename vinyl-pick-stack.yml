@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  vinyl-pick:
+    image: ryaneford/vinyl-pick:latest
+    container_name: vinyl-pick
+    ports:
+      - "3000:3000"
+    environment:
+      - DISCOGS_CONSUMER_KEY=ntFVcHyPjCrFsojUlRRH
+      - DISCOGS_CONSUMER_SECRET=BxujyfkEInijxjBTYfjeemggxjQBAsfn
+      - NEXT_PUBLIC_OAUTH_CALLBACK=https://random.minitrash.com/api/oauth/callback
+      - OAUTH_BASE_URL=https://random.minitrash.com
+    restart: unless-stopped

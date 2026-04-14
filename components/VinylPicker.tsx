@@ -252,8 +252,8 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         savePlayed([...playedIds, selected.instance_id]);
         saveHistory([selected, ...history]);
       }
-      setIsAnimating(false);
-    }, 300);
+      setTimeout(() => setIsAnimating(false), 300);
+    }, 200);
   }, [collection, playedIds, filterGenre, filterDecade, history]);
 
   useEffect(() => {
@@ -436,47 +436,48 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           <p className="mt-4 text-gray-500 dark:text-gray-400">Loading your collection...</p>
         </div>
       ) : currentRelease ? (
-        <button
-          onClick={openOnDiscogs}
-          className="w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow group"
-        >
-          <div className="relative aspect-square mb-4 bg-gray-100 dark:bg-zinc-700 rounded overflow-hidden">
-            {currentRelease.cover_image || currentRelease.thumb ? (
-              <Image
-                src={currentRelease.cover_image || currentRelease.thumb}
-                alt={currentRelease.title}
-                fill
-                className={`object-cover group-hover:scale-105 transition-transform ${isAnimating ? 'animate-pulse' : ''}`}
-                sizes="(max-width: 768px) 100vw, 500px"
-                unoptimized
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                No cover art
-              </div>
-            )}
-            <button
-              onClick={toggleFavorite}
-              className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
-              title={favorites.includes(currentRelease.instance_id) ? 'Remove from favorites' : 'Add to favorites'}
-            >
-              <svg
-                className={`w-6 h-6 ${favorites.includes(currentRelease.instance_id) ? 'text-red-500 fill-current' : 'text-white'}`}
-                viewBox="0 0 24 24"
-                fill={favorites.includes(currentRelease.instance_id) ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                strokeWidth="2"
+        <div className={`transition-all duration-300 ${isAnimating ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
+          <button
+            onClick={openOnDiscogs}
+            className="w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow group"
+          >
+            <div className="relative aspect-square mb-4 bg-gray-100 dark:bg-zinc-700 rounded overflow-hidden">
+              {currentRelease.cover_image || currentRelease.thumb ? (
+                <Image
+                  src={currentRelease.cover_image || currentRelease.thumb}
+                  alt={currentRelease.title}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  sizes="(max-width: 768px) 100vw, 500px"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  No cover art
+                </div>
+              )}
+              <button
+                onClick={toggleFavorite}
+                className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+                title={favorites.includes(currentRelease.instance_id) ? 'Remove from favorites' : 'Add to favorites'}
               >
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </button>
-          </div>
-          <div className="text-center">
-            <h2 className="text-lg font-bold mb-1 truncate dark:text-white">{currentRelease.title}</h2>
-            <p className="text-gray-500 dark:text-gray-400 truncate">
-              {currentRelease.artists?.[0]?.name || 'Unknown Artist'}
-            </p>
-            {currentRelease.year && (
+                <svg
+                  className={`w-6 h-6 ${favorites.includes(currentRelease.instance_id) ? 'text-red-500 fill-current' : 'text-white'}`}
+                  viewBox="0 0 24 24"
+                  fill={favorites.includes(currentRelease.instance_id) ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              </button>
+            </div>
+            <div className="text-center">
+              <h2 className="text-lg font-bold mb-1 truncate dark:text-white">{currentRelease.title}</h2>
+              <p className="text-gray-500 dark:text-gray-400 truncate">
+                {currentRelease.artists?.[0]?.name || 'Unknown Artist'}
+              </p>
+              {currentRelease.year && (
               <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">{currentRelease.year}</p>
             )}
           </div>
@@ -511,7 +512,8 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
               Open on Discogs
             </button>
           </div>
-        </button>
+          </button>
+        </div>
       ) : (
         <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-8 text-center">
           {collection.length > 0 ? (
