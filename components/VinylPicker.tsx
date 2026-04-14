@@ -473,11 +473,8 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           <p className="mt-4 text-gray-500 dark:text-gray-400">Loading your collection...</p>
         </div>
       ) : currentRelease ? (
-        <button
-          onClick={openOnDiscogs}
-          className="w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow group"
-        >
-          <div className="relative aspect-square mb-4 bg-gray-100 dark:bg-zinc-700 rounded overflow-hidden">
+        <div className="w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow group">
+          <div className="relative aspect-square mb-4 bg-gray-100 dark:bg-zinc-700 rounded overflow-hidden cursor-pointer" onClick={openOnDiscogs}>
             {currentRelease.cover_image || currentRelease.thumb ? (
               <Image
                 src={currentRelease.cover_image || currentRelease.thumb}
@@ -493,8 +490,8 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
               </div>
             )}
             <button
-              onClick={toggleFavorite}
-              className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+              onClick={(e) => { e.stopPropagation(); toggleFavorite(); }}
+              className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors z-10"
               title={favorites.includes(currentRelease.instance_id) ? 'Remove from favorites' : 'Add to favorites'}
             >
               <svg
@@ -508,7 +505,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
               </svg>
             </button>
           </div>
-          <div className="text-center">
+          <div className="text-center cursor-pointer" onClick={openOnDiscogs}>
             <h2 className="text-lg font-bold mb-1 truncate dark:text-white">{currentRelease.title}</h2>
             <p className="text-gray-500 dark:text-gray-400 truncate">
               {currentRelease.artists?.[0]?.name || 'Unknown Artist'}
@@ -543,7 +540,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
               )}
               */}
             </div>
-          </button>
+          </div>
       ) : (
         <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-8 text-center">
           {collection.length > 0 ? (
