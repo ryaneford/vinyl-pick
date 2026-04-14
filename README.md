@@ -11,11 +11,13 @@ A simple web app that picks a random vinyl record from your Discogs collection.
 - Dark mode only
 - Click to open any record on Discogs
 - Music service links (Spotify, Apple Music, Tidal, YouTube Music)
-- Favorites system
-- Listening history with navigation
+- Listening Journal with timestamps
+- Mark as Listened — explicitly log what you've actually played
 - Genre and decade filters
-- Keyboard shortcuts (Space=Pick, S=Skip, R=Reset)
+- Keyboard shortcuts (Space=Pick, S=Skip, M=Listened, R=Start Over)
 - Stats and FAQ modals
+- Progress bar and confetti on full collection
+- PWA support (installable on mobile)
 - Docker deployment ready
 
 ## Quick Start

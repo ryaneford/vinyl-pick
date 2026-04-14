@@ -19,6 +19,11 @@ interface DiscogsRelease {
   resource_url?: string;
 }
 
+interface ListenedEntry {
+  release: DiscogsRelease;
+  listenedAt: string;
+}
+
 interface VinylPickerProps {
   onLogout?: () => void;
 }
@@ -39,7 +44,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
   const [error, setError] = useState<string | null>(null);
   const [showVerifierInput, setShowVerifierInput] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [history, setHistory] = useState<DiscogsRelease[]>([]);
+  const [history, setHistory] = useState<ListenedEntry[]>([]);
   const [filterGenre, setFilterGenre] = useState<string>('');
   const [filterDecade, setFilterDecade] = useState<string>('');
   const [isAnimating, setIsAnimating] = useState(false);
@@ -55,6 +60,8 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
   const [favoritesOffset, setFavoritesOffset] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchDelta, setTouchDelta] = useState(0);
+  const [showConfirm, setShowConfirm] = useState<'reset' | 'clearHistory' | null>(null);
+  const [currentIsListened, setCurrentIsListened] = useState(false);
 
   const MAX_VISIBLE = 8;
 
@@ -128,7 +135,14 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 
     if (storedHistory) {
       try {
-        setHistory(JSON.parse(storedHistory));
+        const parsed = JSON.parse(storedHistory);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].listenedAt) {
+          setHistory(parsed);
+        } else {
+          const migrated = parsed.map((r: DiscogsRelease) => ({ release: r, listenedAt: new Date().toISOString() }));
+          localStorage.setItem('vinyl_history', JSON.stringify(migrated.slice(0, 15)));
+          setHistory(migrated.slice(0, 15));
+        }
       } catch {
         localStorage.removeItem('vinyl_history');
       }
@@ -157,9 +171,9 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
     setFavorites(ids);
   };
 
-  const saveHistory = (releases: DiscogsRelease[]) => {
-    localStorage.setItem('vinyl_history', JSON.stringify(releases.slice(0, 15)));
-    setHistory(releases.slice(0, 15));
+  const saveHistory = (entries: ListenedEntry[]) => {
+    localStorage.setItem('vinyl_history', JSON.stringify(entries.slice(0, 15)));
+    setHistory(entries.slice(0, 15));
   };
 
   const connectDiscogs = async () => {
@@ -289,19 +303,25 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
     setIsAnimating(true);
     setTimeout(() => {
       setCurrentRelease(selected);
+      setCurrentIsListened(playedIds.includes(selected.instance_id) || history.some(h => h.release.instance_id === selected.instance_id));
       setDisplayKey(prev => prev + 1);
-      if (!skip) {
-        const newPlayed = [...playedIds, selected.instance_id];
-        savePlayed(newPlayed);
-        saveHistory([selected, ...history]);
-        if (newPlayed.length === collection.length) {
-          setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 4000);
-        }
-      }
       setIsAnimating(false);
     }, 300);
   }, [collection, playedIds, filterGenre, filterDecade, history]);
+
+  const markAsListened = () => {
+    if (!currentRelease) return;
+    if (history.some(h => h.release.instance_id === currentRelease.instance_id)) return;
+    const entry: ListenedEntry = { release: currentRelease, listenedAt: new Date().toISOString() };
+    saveHistory([entry, ...history]);
+    const newPlayed = [...playedIds, currentRelease.instance_id];
+    savePlayed(newPlayed);
+    setCurrentIsListened(true);
+    if (newPlayed.length === collection.length) {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 4000);
+    }
+  };
 
   useEffect(() => {
     if (auth && collection.length === 0 && !isFetchingCollection) {
@@ -340,11 +360,19 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
     }
   }, [collection.length, currentRelease, pickRandomRelease]);
 
-  const resetHistory = () => {
+  const startOver = () => {
     setPlayedIds([]);
     localStorage.setItem('vinyl_played', '[]');
     setCurrentRelease(null);
+    setCurrentIsListened(false);
     setError(null);
+    setShowConfirm(null);
+  };
+
+  const clearListeningHistory = () => {
+    setHistory([]);
+    localStorage.removeItem('vinyl_history');
+    setShowConfirm(null);
   };
 
   const toggleFavorite = () => {
@@ -370,9 +398,12 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       } else if (e.code === 'KeyS' && !e.shiftKey) {
         e.preventDefault();
         pickRandomRelease(true);
-      } else if (e.code === 'KeyR') {
+      } else if (e.code === 'KeyM') {
         e.preventDefault();
-        resetHistory();
+        markAsListened();
+      } else if (e.code === 'KeyR' && !e.shiftKey) {
+        e.preventDefault();
+        setShowConfirm('reset');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -384,6 +415,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
     localStorage.removeItem('vinyl_played');
     localStorage.removeItem('vinyl_favorites');
     localStorage.removeItem('vinyl_history');
+    localStorage.removeItem('vinyl_listened_log');
     localStorage.removeItem('oauth_pending');
     setAuth(null);
     setCollection([]);
@@ -391,6 +423,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
     setFavorites([]);
     setHistory([]);
     setCurrentRelease(null);
+    setCurrentIsListened(false);
     if (onLogout) onLogout();
   };
 
@@ -623,10 +656,10 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         </div>
       )}
 
-      <div className="flex gap-4 mt-4">
+      <div className="flex gap-2 mt-4">
         <button
           onClick={toggleFilters}
-          className={`px-4 py-3 border rounded-lg ${showFilters ? 'bg-gray-200 dark:bg-zinc-600' : 'border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700'}`}
+          className={`px-3 py-3 border rounded-lg ${showFilters ? 'bg-gray-200 dark:bg-zinc-600' : 'border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700'}`}
           title="Filter collection"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -636,7 +669,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         <button
           onClick={() => pickRandomRelease(true)}
           disabled={isLoading || collection.length === 0}
-          className="px-4 py-3 border border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg"
+          className="px-3 py-3 border border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg text-sm"
           title="Skip this record without counting it as played (S)"
         >
           Skip
@@ -644,18 +677,53 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         <button
           onClick={() => pickRandomRelease()}
           disabled={isLoading || collection.length === 0}
-          className="flex-1 bg-black dark:bg-zinc-700 text-white dark:text-white py-3 rounded-lg font-medium disabled:opacity-50 animate-shake"
+          className="flex-1 bg-black dark:bg-zinc-700 text-white dark:text-white py-3 rounded-lg font-medium disabled:opacity-50 animate-shake text-sm"
         >
           Pick Another
         </button>
+        {currentRelease && (
+          <button
+            onClick={markAsListened}
+            disabled={currentIsListened || history.some(h => h.release.instance_id === currentRelease.instance_id)}
+            className={`px-3 py-3 rounded-lg font-medium text-sm ${currentIsListened || history.some(h => h.release.instance_id === currentRelease.instance_id) ? 'bg-green-600/20 text-green-400 border border-green-600/30' : 'bg-green-600 text-white hover:bg-green-700'}`}
+            title="Log as listened (M)"
+          >
+            {currentIsListened || history.some(h => h.release.instance_id === currentRelease.instance_id) ? 'Logged' : 'Listened'}
+          </button>
+        )}
         <button
-          onClick={resetHistory}
-          className="px-4 py-3 border border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg"
-          title="Reset history (R)"
+          onClick={() => setShowConfirm('reset')}
+          className="px-3 py-3 border border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 rounded-lg text-sm"
+          title="Start over - reset which records are available to pick"
         >
-          Reset
+          Start Over
         </button>
       </div>
+
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowConfirm(null)}>
+          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-medium dark:text-white mb-2">{showConfirm === 'reset' ? 'Start Over?' : 'Clear Listening History?'}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              {showConfirm === 'reset' ? 'This will make all records available to pick again. Your listening log is preserved.' : 'This will permanently delete your listening history. This cannot be undone.'}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={showConfirm === 'reset' ? startOver : clearListeningHistory}
+                className="flex-1 bg-red-600 text-white py-2 rounded-lg font-medium hover:bg-red-700"
+              >
+                {showConfirm === 'reset' ? 'Start Over' : 'Clear History'}
+              </button>
+              <button
+                onClick={() => setShowConfirm(null)}
+                className="flex-1 border border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 py-2 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-700"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showFilters && collection.length > 0 && (
         <div className="mt-4 bg-gray-50 dark:bg-zinc-700 rounded-lg p-4">
@@ -698,12 +766,9 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-xs text-gray-500 dark:text-gray-400">Recent</h3>
             <button
-              onClick={() => {
-                setHistory([]);
-                localStorage.removeItem('vinyl_history');
-              }}
+              onClick={() => setShowConfirm('clearHistory')}
               className="text-xs text-gray-400 hover:text-red-500"
-              title="Clear recent"
+              title="Clear listening history"
             >
               Clear
             </button>
@@ -741,11 +806,11 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
                   }
                 }}
               >
-                {history.slice(historyOffset, historyOffset + MAX_VISIBLE).map((r, idx) => (
+                {history.slice(historyOffset, historyOffset + MAX_VISIBLE).map((entry, idx) => (
                   <button
-                    key={r.instance_id}
-                    onClick={() => setCurrentRelease(r)}
-                    title={`${r.artists?.[0]?.name || ''} - ${r.title}${r.year ? ` (${r.year})` : ''}`}
+                    key={entry.release.instance_id}
+                    onClick={() => setCurrentRelease(entry.release)}
+                    title={`${entry.release.artists?.[0]?.name || ''} - ${entry.release.title}${entry.release.year ? ` (${entry.release.year})` : ''}`}
                     className="flex-shrink-0 w-16 h-16 relative rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all duration-300 group/thumb"
                     style={{
                       transform: idx === 0 ? 'scale(1.1) translateZ(10px)' : idx === 1 ? 'scale(0.95) translateZ(-5px) rotateY(-15deg)' : idx === MAX_VISIBLE - 1 ? 'scale(0.95) translateZ(-5px) rotateY(15deg)' : 'scale(0.85) translateZ(-10px)',
@@ -754,12 +819,12 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
                       marginRight: idx === MAX_VISIBLE - 1 ? '0' : '-12px',
                     }}
                   >
-                    {r.thumb ? (
-                      <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
+                    {entry.release.thumb ? (
+                      <Image src={entry.release.thumb} alt={entry.release.title} fill className="object-cover" unoptimized />
                     ) : (
                       <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-xs">?</div>
                     )}
-                    {favorites.includes(r.instance_id) && (
+                    {favorites.includes(entry.release.instance_id) && (
                       <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
                     )}
                   </button>
@@ -853,10 +918,17 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
             style={{ width: `${collection.length > 0 ? (playedIds.length / collection.length) * 100 : 0}%` }}
           />
         </div>
-        <p className="text-center text-gray-400 dark:text-gray-500 text-sm mt-1">
-          {collection.length - playedIds.length} / {collection.length} records remaining
-          {filterGenre || filterDecade ? ' (filtered)' : ''}
-        </p>
+        <div className="flex justify-between text-xs mt-1">
+          <span className="text-gray-400 dark:text-gray-500">
+            {playedIds.length} of {collection.length} picked
+          </span>
+          <span className="text-gray-400 dark:text-gray-500">
+            {history.length} logged as listened
+          </span>
+        </div>
+        {(filterGenre || filterDecade) && (
+          <span className="text-xs text-gray-400">(filtered)</span>
+        )}
       </div>
 
       {dailyPick && (
@@ -897,7 +969,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       )}
 
       <p className="text-center text-gray-500 dark:text-gray-600 text-xs mt-2">
-        Keyboard: Space=Pick | S=Skip | R=Reset
+        Keyboard: Space=Pick | S=Skip | M=Listened | R=Start Over
       </p>
 
       <div className="flex items-center justify-center gap-4 mt-4 text-xs text-gray-400 dark:text-gray-500">
@@ -905,7 +977,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           <button onClick={() => setShowStats(true)} className="hover:text-gray-600 dark:hover:text-gray-300">Collection Stats</button>
         )}
         <span>|</span>
-        <button onClick={() => setShowHistory(true)} className="hover:text-gray-600 dark:hover:text-gray-300">History</button>
+        <button onClick={() => setShowHistory(true)} className="hover:text-gray-600 dark:hover:text-gray-300">Journal</button>
         <span>|</span>
         <button onClick={() => setShowFaq(true)} className="hover:text-gray-600 dark:hover:text-gray-300">FAQ</button>
         <span>|</span>
@@ -917,7 +989,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       )}
 
       {showHistory && (
-        <HistoryModal history={history} favorites={favorites} onSelect={(r) => { setCurrentRelease(r); setShowHistory(false); }} onClose={() => setShowHistory(false)} />
+        <HistoryModal history={history} favorites={favorites} onSelect={(r) => { setCurrentRelease(r); setShowHistory(false); }} onClear={() => { clearListeningHistory(); setShowHistory(false); }} onClose={() => setShowHistory(false)} />
       )}
 
       {showFaq && (
@@ -963,7 +1035,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
               </div>
               <div>
                 <p className="font-medium dark:text-gray-300">Keyboard shortcuts</p>
-                <p>Space = Pick | S = Skip | R = Reset | D = Toggle details</p>
+                <p>Space = Pick | S = Skip | M = Mark as Listened | R = Start Over</p>
               </div>
             </div>
           </div>
@@ -1047,7 +1119,21 @@ function StatsModal({ collection, playedIds, onClose }: { collection: DiscogsRel
   );
 }
 
-function HistoryModal({ history, favorites, onSelect, onClose }: { history: DiscogsRelease[]; favorites: number[]; onSelect: (r: DiscogsRelease) => void; onClose: () => void }) {
+function HistoryModal({ history, favorites, onSelect, onClear, onClose }: { history: ListenedEntry[]; favorites: number[]; onSelect: (r: DiscogsRelease) => void; onClear: () => void; onClose: () => void }) {
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
+
   return (
     <div 
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
@@ -1058,40 +1144,51 @@ function HistoryModal({ history, favorites, onSelect, onClose }: { history: Disc
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-zinc-700 sticky top-0 bg-white dark:bg-zinc-800 z-10">
-          <h3 className="font-medium dark:text-white">Listening History</h3>
-          <button 
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <h3 className="font-medium dark:text-white">Listening Journal</h3>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onClear}
+              className="text-xs text-gray-400 hover:text-red-500"
+            >
+              Clear
+            </button>
+            <button 
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
         {history.length === 0 ? (
-          <p className="p-4 text-gray-400 text-center">No history yet. Pick a record to get started!</p>
+          <p className="p-4 text-gray-400 text-center">No entries yet. Pick a record and mark it as listened!</p>
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-zinc-700">
-            {history.map((r, idx) => (
+            {history.map((entry, idx) => (
               <button
-                key={r.instance_id}
-                onClick={() => onSelect(r)}
+                key={`${entry.release.instance_id}-${idx}`}
+                onClick={() => onSelect(entry.release)}
                 className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors text-left"
               >
                 <span className="text-xs text-gray-400 w-6 text-right flex-shrink-0">{idx + 1}</span>
                 <div className="w-12 h-12 relative rounded overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-zinc-700">
-                  {r.thumb ? (
-                    <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
+                  {entry.release.thumb ? (
+                    <Image src={entry.release.thumb} alt={entry.release.title} fill className="object-cover" unoptimized />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">?</div>
                   )}
-                  {favorites.includes(r.instance_id) && (
+                  {favorites.includes(entry.release.instance_id) && (
                     <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium dark:text-white truncate">{r.title}</p>
-                  <p className="text-xs text-gray-400">{r.year || 'Unknown year'}</p>
+                  <p className="text-sm font-medium dark:text-white truncate">{entry.release.title}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-gray-400">{entry.release.artists?.[0]?.name || 'Unknown Artist'}</p>
+                    <span className="text-xs text-gray-500 dark:text-gray-600">{formatDate(entry.listenedAt)}</span>
+                  </div>
                 </div>
               </button>
             ))}

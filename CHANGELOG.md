@@ -2,6 +2,23 @@
 
 All notable changes to Vinyl Pick will be documented in this file.
 
+## [1.8.0] - 2026-04-14
+
+### Added
+- "Listened" button to explicitly log records as listened (separate from Pick)
+- Listening Journal modal with timestamps (relative: "2m ago", "3d ago", etc.)
+- Confirmation dialogs for Start Over and Clear History actions
+- Mark as Listened keyboard shortcut (M)
+
+### Changed
+- Pick Another no longer auto-logs — records stay available until explicitly logged
+- Reset replaced with Start Over (clears pick pool only, preserves journal) and Clear History
+- Progress bar now shows "X of Y picked" and "N logged as listened"
+- History footer link renamed to "Journal"
+- History data format includes timestamps (auto-migrates old data)
+
+---
+
 ## [1.7.1] - 2026-04-14
 
 ### Added
