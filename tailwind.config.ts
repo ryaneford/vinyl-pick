@@ -7,7 +7,11 @@ const config: Config = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      perspective: {
+        '500': '500px',
+      },
+    },
   },
   plugins: [],
 }

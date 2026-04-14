@@ -2,14 +2,22 @@
 
 A simple web app that picks a random vinyl record from your Discogs collection.
 
+![Vinyl Pick Screenshot](/screenshot.png)
+
 ## Features
 
 - Connect with your Discogs account via OAuth
 - Randomly picks a vinyl record from your collection
 - Shuffle without repeat (remembers what you've played)
-- Dark mode (default) with light mode toggle
+- Dark mode only
 - Click to open any record on Discogs
-- Reset history to start fresh
+- Music service links (Spotify, Apple Music, Tidal, YouTube Music)
+- Favorites system
+- Listening history with navigation
+- Genre and decade filters
+- Keyboard shortcuts (Space=Pick, S=Skip, R=Reset)
+- Stats and FAQ modals
+- Docker deployment ready
 
 ## Quick Start
 

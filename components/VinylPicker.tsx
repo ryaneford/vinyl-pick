@@ -45,11 +45,37 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showFaq, setShowFaq] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [plexampUrl, setPlexampUrl] = useState<string>('');
   const [historyOffset, setHistoryOffset] = useState(0);
   const [favoritesOffset, setFavoritesOffset] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchDelta, setTouchDelta] = useState(0);
 
   const MAX_VISIBLE = 8;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStart !== null) {
+      setTouchDelta(e.touches[0].clientX - touchStart);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStart !== null) {
+      if (touchDelta > 50) {
+        pickRandomRelease();
+      } else if (touchDelta < -50) {
+        setCurrentRelease(null);
+      }
+      setTouchStart(null);
+      setTouchDelta(0);
+    }
+  };
 
   const searchParams = useSearchParams();
   const oauthVerifier = searchParams.get('oauth_verifier');
@@ -128,8 +154,8 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
   };
 
   const saveHistory = (releases: DiscogsRelease[]) => {
-    localStorage.setItem('vinyl_history', JSON.stringify(releases.slice(0, 10)));
-    setHistory(releases.slice(0, 10));
+    localStorage.setItem('vinyl_history', JSON.stringify(releases.slice(0, 15)));
+    setHistory(releases.slice(0, 15));
   };
 
   const connectDiscogs = async () => {
@@ -477,7 +503,10 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           <p className="mt-4 text-gray-500 dark:text-gray-400">Loading your collection...</p>
         </div>
       ) : currentRelease ? (
-        <div className="w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow group">
+        <div className="w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow group"
+             onTouchStart={handleTouchStart}
+             onTouchMove={handleTouchMove}
+             onTouchEnd={handleTouchEnd}>
           <div className="relative aspect-square mb-4 bg-gray-100 dark:bg-zinc-700 rounded overflow-hidden cursor-pointer" onClick={openOnDiscogs}>
             {currentRelease.cover_image || currentRelease.thumb ? (
               <Image
@@ -640,39 +669,51 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
               Clear
             </button>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setHistoryOffset(Math.max(0, historyOffset - MAX_VISIBLE))}
-              disabled={historyOffset === 0}
-              className="flex-shrink-0 w-6 h-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"
-            >
-              ‹
-            </button>
-            <div className="flex gap-2 overflow-hidden">
-              {history.slice(historyOffset, historyOffset + MAX_VISIBLE).map((r) => (
-                <button
-                  key={r.instance_id}
-                  onClick={() => setCurrentRelease(r)}
-                  className="flex-shrink-0 w-12 h-12 relative rounded overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors"
-                >
-                  {r.thumb ? (
-                    <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
-                  ) : (
-                    <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-xs">?</div>
-                  )}
-                  {favorites.includes(r.instance_id) && (
-                    <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
-                  )}
-                </button>
-              ))}
+          <div className="relative">
+            <div className="flex justify-center items-center perspective-500">
+              <button
+                onClick={() => setHistoryOffset(Math.max(0, historyOffset - MAX_VISIBLE))}
+                disabled={historyOffset === 0}
+                className="flex-shrink-0 w-10 h-14 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30 text-2xl"
+              >
+                ‹
+              </button>
+              <div 
+                className="flex items-center justify-center gap-1 overflow-hidden touch-pan-x"
+                style={{ touchAction: 'pan-x' }}
+              >
+                {history.slice(historyOffset, historyOffset + MAX_VISIBLE).map((r, idx) => (
+                  <button
+                    key={r.instance_id}
+                    onClick={() => setCurrentRelease(r)}
+                    onTouchStart={() => {}}
+                    className="flex-shrink-0 w-16 h-16 relative rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all duration-300"
+                    style={{
+                      transform: idx === 0 ? 'scale(1.1) translateZ(10px)' : idx === 1 ? 'scale(0.95) translateZ(-5px) rotateY(-15deg)' : idx === MAX_VISIBLE - 1 ? 'scale(0.95) translateZ(-5px) rotateY(15deg)' : 'scale(0.85) translateZ(-10px)',
+                      zIndex: MAX_VISIBLE - idx,
+                      marginLeft: idx === 0 ? '0' : '-12px',
+                      marginRight: idx === MAX_VISIBLE - 1 ? '0' : '-12px',
+                    }}
+                  >
+                    {r.thumb ? (
+                      <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-xs">?</div>
+                    )}
+                    {favorites.includes(r.instance_id) && (
+                      <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setHistoryOffset(Math.min(history.length - MAX_VISIBLE, historyOffset + MAX_VISIBLE))}
+                disabled={historyOffset + MAX_VISIBLE >= history.length}
+                className="flex-shrink-0 w-10 h-14 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30 text-2xl"
+              >
+                ›
+              </button>
             </div>
-            <button
-              onClick={() => setHistoryOffset(Math.min(history.length - MAX_VISIBLE, historyOffset + MAX_VISIBLE))}
-              disabled={historyOffset + MAX_VISIBLE >= history.length}
-              className="flex-shrink-0 w-6 h-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"
-            >
-              ›
-            </button>
           </div>
         </div>
       )}
@@ -684,7 +725,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
             <button
               onClick={() => setFavoritesOffset(Math.max(0, favoritesOffset - MAX_VISIBLE))}
               disabled={favoritesOffset === 0}
-              className="flex-shrink-0 w-6 h-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"
+              className="flex-shrink-0 w-10 h-14 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30 text-2xl"
             >
               ‹
             </button>
@@ -693,7 +734,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
                 <button
                   key={r.instance_id}
                   onClick={() => setCurrentRelease(r)}
-                  className="flex-shrink-0 w-12 h-12 relative rounded overflow-hidden border-2 border-red-500 hover:border-red-600 transition-colors"
+                  className="flex-shrink-0 w-16 h-16 relative rounded-lg overflow-hidden border-2 border-red-500 hover:border-red-600 transition-transform hover:scale-105"
                 >
                   {r.thumb ? (
                     <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
@@ -709,7 +750,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
                 setFavoritesOffset(Math.min(favCount - MAX_VISIBLE, favoritesOffset + MAX_VISIBLE));
               }}
               disabled={favoritesOffset + MAX_VISIBLE >= collection.filter((r) => favorites.includes(r.instance_id)).length}
-              className="flex-shrink-0 w-6 h-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"
+              className="flex-shrink-0 w-10 h-14 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30 text-2xl"
             >
               ›
             </button>
@@ -728,13 +769,25 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         Keyboard: Space=Pick | S=Skip | R=Reset
       </p>
 
-      <button
-        onClick={() => setShowFaq(true)}
-        className="text-center text-gray-400 dark:text-gray-500 text-lg mt-2 hover:text-gray-600 dark:hover:text-gray-300"
-        title="Help & FAQ"
-      >
-        ?
-      </button>
+      <div className="flex items-center justify-center gap-4 mt-4 text-xs text-gray-400 dark:text-gray-500">
+        {collection.length > 0 && (
+          <button onClick={() => setShowStats(true)} className="hover:text-gray-600 dark:hover:text-gray-300">Collection Stats</button>
+        )}
+        <span>|</span>
+        <button onClick={() => setShowHistory(true)} className="hover:text-gray-600 dark:hover:text-gray-300">History</button>
+        <span>|</span>
+        <button onClick={() => setShowFaq(true)} className="hover:text-gray-600 dark:hover:text-gray-300">FAQ</button>
+        <span>|</span>
+        <a href="https://github.com/ryaneford/vinyl-pick" target="_blank" rel="noopener noreferrer" className="hover:text-gray-600 dark:hover:text-gray-300">Source</a>
+      </div>
+
+      {showStats && (
+        <StatsModal collection={collection} playedIds={playedIds} onClose={() => setShowStats(false)} />
+      )}
+
+      {showHistory && (
+        <HistoryModal history={history} favorites={favorites} onSelect={(r) => { setCurrentRelease(r); setShowHistory(false); }} onClose={() => setShowHistory(false)} />
+      )}
 
       {showFaq && (
         <div 
@@ -786,14 +839,11 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         </div>
       )}
 
-      {collection.length > 0 && <StatsPanel collection={collection} playedIds={playedIds} />}
-    </div>
+      </div>
   );
 }
 
-function StatsPanel({ collection, playedIds }: { collection: DiscogsRelease[]; playedIds: number[] }) {
-  const [isOpen, setIsOpen] = useState(false);
-
+function StatsModal({ collection, playedIds, onClose }: { collection: DiscogsRelease[]; playedIds: number[]; onClose: () => void }) {
   const uniqueArtists = new Set(
     collection.filter((r) => playedIds.includes(r.instance_id)).flatMap((r) => r.artists?.map((a) => a.name) || [])
   ).size;
@@ -816,23 +866,26 @@ function StatsPanel({ collection, playedIds }: { collection: DiscogsRelease[]; p
   const decades = Object.entries(decadeCounts).sort((a, b) => b[0].localeCompare(a[0]));
 
   return (
-    <div className="mt-6 bg-gray-50 dark:bg-zinc-700 rounded-lg overflow-hidden">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 flex items-center justify-between text-left"
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Collection Stats</h3>
-        <svg
-          className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {isOpen && (
-        <div className="px-4 pb-4 grid grid-cols-2 gap-4 text-sm">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-zinc-700">
+          <h3 className="font-medium dark:text-white">Collection Stats</h3>
+          <button 
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-4 grid grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-gray-400 dark:text-gray-500">Total plays:</span>{' '}
             <span className="font-medium dark:text-white">{playedIds.length}</span>
@@ -858,7 +911,62 @@ function StatsPanel({ collection, playedIds }: { collection: DiscogsRelease[]; p
             </div>
           )}
         </div>
-      )}
+      </div>
+    </div>
+  );
+}
+
+function HistoryModal({ history, favorites, onSelect, onClose }: { history: DiscogsRelease[]; favorites: number[]; onSelect: (r: DiscogsRelease) => void; onClose: () => void }) {
+  return (
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-zinc-700 sticky top-0 bg-white dark:bg-zinc-800 z-10">
+          <h3 className="font-medium dark:text-white">Listening History</h3>
+          <button 
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        {history.length === 0 ? (
+          <p className="p-4 text-gray-400 text-center">No history yet. Pick a record to get started!</p>
+        ) : (
+          <div className="divide-y divide-gray-100 dark:divide-zinc-700">
+            {history.map((r, idx) => (
+              <button
+                key={r.instance_id}
+                onClick={() => onSelect(r)}
+                className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors text-left"
+              >
+                <span className="text-xs text-gray-400 w-6 text-right flex-shrink-0">{idx + 1}</span>
+                <div className="w-12 h-12 relative rounded overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-zinc-700">
+                  {r.thumb ? (
+                    <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">?</div>
+                  )}
+                  {favorites.includes(r.instance_id) && (
+                    <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium dark:text-white truncate">{r.title}</p>
+                  <p className="text-xs text-gray-400">{r.year || 'Unknown year'}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

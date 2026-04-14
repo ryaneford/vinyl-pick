@@ -2,6 +2,29 @@
 
 All notable changes to Vinyl Pick will be documented in this file.
 
+## [1.6.0] - 2026-04-14
+
+### Added
+- Listening History modal with detailed list (cover art, title, artist, year)
+- Footer with Collection Stats, History, FAQ, and Source links
+- Collection Stats now opens as a modal popup
+- 3D cover flow effect on Recent section
+- Larger touch targets for mobile (bigger nav arrows, cover thumbnails)
+- Touch swipe support on album card (swipe right to pick, left to dismiss)
+- Screenshot added to README
+
+### Changed
+- Increased recent history from 10 to 15 picks
+- Recent and Favorites thumbnails enlarged from 12x12 to 16x16
+- FAQ link moved from standalone "?" button to footer
+- Stats panel converted from collapsible section to modal popup
+- Source link opens GitHub repo in new tab
+
+### Fixed
+- Clear button repositioned to same line as "Recent" header
+
+---
+
 ## [1.5.2] - 2026-04-14
 
 ### Added
