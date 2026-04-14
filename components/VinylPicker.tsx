@@ -596,9 +596,48 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 
       {history.length > 0 && (
         <div className="mt-4">
-          <h3 className="text-xs text-gray-500 dark:text-gray-400 mb-2">Recent</h3>
-          <div className="relative">
-            <div className="flex items-center justify-center gap-1 overflow-hidden py-2">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs text-gray-500 dark:text-gray-400">Recent</h3>
+            <button
+              onClick={() => {
+                setHistory([]);
+                localStorage.setItem('vinyl_history', '[]');
+              }}
+              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              Clear
+            </button>
+          </div>
+          <div 
+            className="relative touch-pan-x"
+            onTouchStart={(e) => {
+              const touch = e.touches[0];
+              (e.currentTarget as HTMLElement).dataset.touchStartX = String(touch.clientX);
+            }}
+            onTouchEnd={(e) => {
+              const el = e.currentTarget;
+              const startX = parseFloat(el.dataset.touchStartX || '0');
+              const endX = e.changedTouches[0].clientX;
+              const diff = startX - endX;
+              if (Math.abs(diff) > 50) {
+                const currentIdx = Math.floor(history.length / 2);
+                const newIdx = diff > 0 
+                  ? Math.min(currentIdx + 1, history.length - 1) 
+                  : Math.max(currentIdx - 1, 0);
+                setCurrentRelease(history[newIdx]);
+              }
+            }}
+            onWheel={(e) => {
+              if (e.deltaY !== 0) {
+                const currentIdx = Math.floor(history.length / 2);
+                const newIdx = e.deltaY > 0 
+                  ? Math.min(currentIdx + 1, history.length - 1) 
+                  : Math.max(currentIdx - 1, 0);
+                setCurrentRelease(history[newIdx]);
+              }
+            }}
+          >
+            <div className="flex items-center justify-center gap-1 overflow-hidden py-2 select-none">
               {history.map((r, idx) => {
                 const isCenter = idx === Math.floor(history.length / 2);
                 const offset = idx - Math.floor(history.length / 2);
