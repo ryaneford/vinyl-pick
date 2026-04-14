@@ -136,6 +136,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 
     if (storedOauth && oauthVerifier) {
       handleOAuthCallback(oauthVerifier);
+      window.history.replaceState({}, '', window.location.pathname);
     }
   }, [oauthVerifier]);
 

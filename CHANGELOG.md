@@ -2,6 +2,13 @@
 
 All notable changes to Vinyl Pick will be documented in this file.
 
+## [1.7.1] - 2026-04-14
+
+### Added
+- Clean URL after OAuth login (strips token/verifier query params)
+
+---
+
 ## [1.7.0] - 2026-04-14
 
 ### Added
