@@ -18,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" data-theme="dark">
-      <body className="min-h-screen flex flex-col items-center justify-center p-4 dark:bg-[#171717]">
+      <body className="min-h-screen flex flex-col items-center justify-center p-2 dark:bg-[#171717]">
         {children}
       </body>
     </html>

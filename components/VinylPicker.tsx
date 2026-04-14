@@ -530,7 +530,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 
   return (
     <div className="max-w-lg w-full">
-      <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-4 mb-4 flex items-center justify-between">
+      <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-2 mb-2 flex items-center justify-between">
         <span className="text-gray-600 dark:text-gray-300">
           Connected as <strong>{auth.username}</strong>
         </span>
@@ -568,12 +568,12 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
           <p className="mt-4 text-gray-500 dark:text-gray-400">Loading your collection...</p>
         </div>
       ) : currentRelease ? (
-        <div className="w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow group animate-fade-slide-in"
+        <div className="w-full bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-3 hover:shadow-xl transition-shadow group animate-fade-slide-in"
              key={displayKey}
              onTouchStart={handleTouchStart}
              onTouchMove={handleTouchMove}
              onTouchEnd={handleTouchEnd}>
-          <div className="relative aspect-square mb-4 bg-gray-100 dark:bg-zinc-700 rounded overflow-hidden cursor-pointer" onClick={openOnDiscogs}>
+          <div className="relative aspect-square mb-2 bg-gray-100 dark:bg-zinc-700 rounded overflow-hidden cursor-pointer" onClick={openOnDiscogs}>
             {currentRelease.cover_image || currentRelease.thumb ? (
               <div className="relative w-full h-full">
                 <div className="absolute inset-0 rounded-full bg-black/20 z-10 pointer-events-none" style={{background: 'radial-gradient(circle, rgba(0,0,0,0.3) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.1) 100%)'}} />
@@ -593,11 +593,11 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
             )}
             <button
               onClick={(e) => { e.stopPropagation(); toggleFavorite(); }}
-              className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors z-10"
+              className="absolute top-1 right-1 p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-colors z-10"
               title={favorites.includes(currentRelease.instance_id) ? 'Remove from favorites' : 'Add to favorites'}
             >
               <svg
-                className={`w-6 h-6 ${favorites.includes(currentRelease.instance_id) ? 'text-red-500 fill-current' : 'text-white'}`}
+                className={`w-5 h-5 ${favorites.includes(currentRelease.instance_id) ? 'text-red-500 fill-current' : 'text-white'}`}
                 viewBox="0 0 24 24"
                 fill={favorites.includes(currentRelease.instance_id) ? 'currentColor' : 'none'}
                 stroke="currentColor"
@@ -608,15 +608,15 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
             </button>
           </div>
           <div className="text-center cursor-pointer" onClick={openOnDiscogs}>
-            <h2 className="text-lg font-bold mb-1 truncate dark:text-white">{currentRelease.title}</h2>
-            <p className="text-gray-500 dark:text-gray-400 truncate">
+            <h2 className="text-base font-bold mb-0.5 truncate dark:text-white">{currentRelease.title}</h2>
+            <p className="text-gray-500 dark:text-gray-400 truncate text-sm">
               {currentRelease.artists?.[0]?.name || 'Unknown Artist'}
             </p>
             {currentRelease.year && (
-              <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">{currentRelease.year}</p>
+              <p className="text-gray-400 dark:text-gray-500 text-xs">{currentRelease.year}</p>
             )}
           </div>
-          <div className="flex justify-center gap-3 mt-2">
+          <div className="flex justify-center gap-2 mt-1">
               <button onClick={openOnDiscogs} className="p-1.5 rounded-full bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600" title="Discogs">
                 <img src="https://cdn.simpleicons.org/discogs" className="w-4 h-4 dark:invert" />
               </button>
@@ -653,7 +653,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         </div>
       )}
 
-      <div className="flex gap-2 mt-4 items-center">
+      <div className="flex gap-2 mt-2 items-center">
         <button
           onClick={toggleFilters}
           className={`px-3 py-3 border rounded-lg ${showFilters ? 'bg-gray-200 dark:bg-zinc-600' : 'border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700'}`}
@@ -752,7 +752,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       )}
 
       {history.length > 0 && (
-        <div className="mt-4">
+        <div className="mt-2">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-xs text-gray-500 dark:text-gray-400">Recent</h3>
             <button
@@ -901,8 +901,8 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 
       {error && <p className="text-red-500 text-center mt-4">{error}</p>}
 
-      <div className="mt-4">
-        <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-1.5 overflow-hidden">
+      <div className="mt-2">
+        <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-1 overflow-hidden">
           <div
             className="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full transition-all duration-500"
             style={{ width: `${collection.length > 0 ? (playedIds.length / collection.length) * 100 : 0}%` }}
@@ -922,13 +922,13 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       </div>
 
       {dailyPick && (
-        <div className="mt-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 dark:border-purple-500/30 rounded-lg p-3 flex items-center gap-3">
+        <div className="mt-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 dark:border-purple-500/30 rounded-lg p-2 flex items-center gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-purple-400 dark:text-purple-300 mb-1">Record of the Day</p>
+            <p className="text-xs text-purple-400 dark:text-purple-300">Record of the Day</p>
             <p className="text-sm font-medium dark:text-white truncate">{dailyPick.title}</p>
             <p className="text-xs text-gray-400">{dailyPick.artists?.[0]?.name || 'Unknown Artist'}{dailyPick.year ? ` · ${dailyPick.year}` : ''}</p>
           </div>
-          <div className="w-16 h-16 relative rounded overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-zinc-700">
+          <div className="w-12 h-12 relative rounded overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-zinc-700">
             {dailyPick.thumb ? (
               <Image src={dailyPick.cover_image || dailyPick.thumb} alt={dailyPick.title} fill className="object-cover" unoptimized />
             ) : (
@@ -958,11 +958,11 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
         </div>
       )}
 
-      <p className="text-center text-gray-500 dark:text-gray-600 text-xs mt-2">
+      <p className="text-center text-gray-500 dark:text-gray-600 text-xs mt-1">
         Keyboard: Space=Pick | M=Listened | R=Start Over
       </p>
 
-      <div className="flex items-center justify-center gap-4 mt-4 text-xs text-gray-400 dark:text-gray-500">
+      <div className="flex items-center justify-center gap-4 mt-2 text-xs text-gray-400 dark:text-gray-500">
         {collection.length > 0 && (
           <button onClick={() => setShowStats(true)} className="hover:text-gray-600 dark:hover:text-gray-300">Collection Stats</button>
         )}

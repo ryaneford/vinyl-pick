@@ -2,6 +2,16 @@
 
 All notable changes to Vinyl Pick will be documented in this file.
 
+## [1.8.2] - 2026-04-14
+
+### Changed
+- Tightened layout to fit on 1710x1112 display without scrolling
+- Reduced padding, margins, font sizes, and element spacing throughout
+- Smaller heart button and service icons
+- Record of the Day thumbnail reduced from 16x16 to 12x12
+
+---
+
 ## [1.8.1] - 2026-04-14
 
 ### Changed
