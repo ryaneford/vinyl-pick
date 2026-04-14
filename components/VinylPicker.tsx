@@ -45,6 +45,7 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
   const [filterDecade, setFilterDecade] = useState<string>('');
   const [isAnimating, setIsAnimating] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showFaq, setShowFaq] = useState(false);
   const [plexampUrl, setPlexampUrl] = useState<string>('');
 
   const searchParams = useSearchParams();
@@ -721,6 +722,63 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       <p className="text-center text-gray-500 dark:text-gray-600 text-xs mt-2">
         Keyboard: Space=Pick | S=Skip | R=Reset | D=Details
       </p>
+
+      <button
+        onClick={() => setShowFaq(true)}
+        className="text-center text-gray-400 dark:text-gray-500 text-xs mt-2 hover:text-gray-600 dark:hover:text-gray-300"
+      >
+        ? Help & FAQ
+      </button>
+
+      {showFaq && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowFaq(false)}
+        >
+          <div 
+            className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-zinc-700">
+              <h3 className="font-medium dark:text-white">Vinyl Pick FAQ</h3>
+              <button 
+                onClick={() => setShowFaq(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 space-y-4 text-sm text-gray-600 dark:text-gray-400">
+              <div>
+                <p className="font-medium dark:text-gray-300">What is this?</p>
+                <p>Vinyl Pick picks a random vinyl from your Discogs collection. Perfect for deciding what to spin today!</p>
+              </div>
+              <div>
+                <p className="font-medium dark:text-gray-300">How do I connect my collection?</p>
+                <p>Click "Connect with Discogs" to authorize. Your OAuth tokens are stored locally - nothing is sent to any server.</p>
+              </div>
+              <div>
+                <p className="font-medium dark:text-gray-300">Does this modify my Discogs account?</p>
+                <p>No! This only reads your collection. It cannot add, edit, or delete anything on Discogs.</p>
+              </div>
+              <div>
+                <p className="font-medium dark:text-gray-300">What do the buttons do?</p>
+                <p><strong>Pick Another</strong> - picks a random unplayed record. <strong>Skip</strong> - shows another without counting as played. <strong>Reset</strong> - starts fresh from your full collection.</p>
+              </div>
+              <div>
+                <p className="font-medium dark:text-gray-300">Open in...</p>
+                <p>Click any icon to open this album in that music service. Links open in a new tab.</p>
+              </div>
+              <div>
+                <p className="font-medium dark:text-gray-300">Keyboard shortcuts</p>
+                <p>Space = Pick | S = Skip | R = Reset | D = Toggle details</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {collection.length > 0 && <StatsPanel collection={collection} playedIds={playedIds} />}
     </div>
