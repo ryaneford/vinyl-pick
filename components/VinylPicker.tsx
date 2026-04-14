@@ -46,6 +46,10 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [showFaq, setShowFaq] = useState(false);
   const [plexampUrl, setPlexampUrl] = useState<string>('');
+  const [historyOffset, setHistoryOffset] = useState(0);
+  const [favoritesOffset, setFavoritesOffset] = useState(0);
+
+  const MAX_VISIBLE = 8;
 
   const searchParams = useSearchParams();
   const oauthVerifier = searchParams.get('oauth_verifier');
@@ -623,24 +627,52 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 
       {history.length > 0 && (
         <div className="mt-4">
-          <h3 className="text-xs text-gray-500 dark:text-gray-400 mb-2">Recent</h3>
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {history.map((r) => (
-              <button
-                key={r.instance_id}
-                onClick={() => setCurrentRelease(r)}
-                className="flex-shrink-0 w-12 h-12 relative rounded overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors"
-              >
-                {r.thumb ? (
-                  <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-xs">?</div>
-                )}
-                {favorites.includes(r.instance_id) && (
-                  <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
-                )}
-              </button>
-            ))}
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-xs text-gray-500 dark:text-gray-400">Recent</h3>
+            <button
+              onClick={() => {
+                setHistory([]);
+                localStorage.removeItem('vinyl_history');
+              }}
+              className="text-xs text-gray-400 hover:text-red-500"
+              title="Clear recent"
+            >
+              Clear
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setHistoryOffset(Math.max(0, historyOffset - MAX_VISIBLE))}
+              disabled={historyOffset === 0}
+              className="flex-shrink-0 w-6 h-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"
+            >
+              ‹
+            </button>
+            <div className="flex gap-2 overflow-hidden">
+              {history.slice(historyOffset, historyOffset + MAX_VISIBLE).map((r) => (
+                <button
+                  key={r.instance_id}
+                  onClick={() => setCurrentRelease(r)}
+                  className="flex-shrink-0 w-12 h-12 relative rounded overflow-hidden border-2 border-transparent hover:border-blue-500 transition-colors"
+                >
+                  {r.thumb ? (
+                    <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-xs">?</div>
+                  )}
+                  {favorites.includes(r.instance_id) && (
+                    <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full" />
+                  )}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setHistoryOffset(Math.min(history.length - MAX_VISIBLE, historyOffset + MAX_VISIBLE))}
+              disabled={historyOffset + MAX_VISIBLE >= history.length}
+              className="flex-shrink-0 w-6 h-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"
+            >
+              ›
+            </button>
           </div>
         </div>
       )}
@@ -648,20 +680,39 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
       {favorites.length > 0 && (
         <div className="mt-4">
           <h3 className="text-xs text-gray-500 dark:text-gray-400 mb-2">Favorites ({favorites.length})</h3>
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {collection.filter((r) => favorites.includes(r.instance_id)).map((r) => (
-              <button
-                key={r.instance_id}
-                onClick={() => setCurrentRelease(r)}
-                className="flex-shrink-0 w-12 h-12 relative rounded overflow-hidden border-2 border-red-500 hover:border-red-600 transition-colors"
-              >
-                {r.thumb ? (
-                  <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-xs">?</div>
-                )}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFavoritesOffset(Math.max(0, favoritesOffset - MAX_VISIBLE))}
+              disabled={favoritesOffset === 0}
+              className="flex-shrink-0 w-6 h-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"
+            >
+              ‹
+            </button>
+            <div className="flex gap-2 overflow-hidden">
+              {collection.filter((r) => favorites.includes(r.instance_id)).slice(favoritesOffset, favoritesOffset + MAX_VISIBLE).map((r) => (
+                <button
+                  key={r.instance_id}
+                  onClick={() => setCurrentRelease(r)}
+                  className="flex-shrink-0 w-12 h-12 relative rounded overflow-hidden border-2 border-red-500 hover:border-red-600 transition-colors"
+                >
+                  {r.thumb ? (
+                    <Image src={r.thumb} alt={r.title} fill className="object-cover" unoptimized />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center text-xs">?</div>
+                  )}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => {
+                const favCount = collection.filter((r) => favorites.includes(r.instance_id)).length;
+                setFavoritesOffset(Math.min(favCount - MAX_VISIBLE, favoritesOffset + MAX_VISIBLE));
+              }}
+              disabled={favoritesOffset + MAX_VISIBLE >= collection.filter((r) => favorites.includes(r.instance_id)).length}
+              className="flex-shrink-0 w-6 h-12 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"
+            >
+              ›
+            </button>
           </div>
         </div>
       )}
@@ -679,9 +730,10 @@ function VinylPickerContent({ onLogout }: VinylPickerProps) {
 
       <button
         onClick={() => setShowFaq(true)}
-        className="text-center text-gray-400 dark:text-gray-500 text-xs mt-2 hover:text-gray-600 dark:hover:text-gray-300"
+        className="text-center text-gray-400 dark:text-gray-500 text-lg mt-2 hover:text-gray-600 dark:hover:text-gray-300"
+        title="Help & FAQ"
       >
-        ? Help & FAQ
+        ?
       </button>
 
       {showFaq && (
