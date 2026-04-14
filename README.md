@@ -152,3 +152,7 @@ MIT
 ## Credits
 
 - Discogs logo from [Simple Icons](https://simpleicons.org)
+
+---
+
+*Vinyl Pick was built entirely with AI agents. The creator has zero coding experience — every line of code, from OAuth flow to Docker deployment, was written collaboratively with [opencode](https://github.com/anomalyco/opencode). If you're curious what AI-assisted development looks like in practice, this project is it.*
